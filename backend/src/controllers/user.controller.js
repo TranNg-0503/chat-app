@@ -8,8 +8,8 @@ export async function getRecommendedUsers(req, res) {
         const recommendedUsers = await User.find({
             $and: [
                 {_id: {$ne: currentUserId}},
-                {_id: {$nin: currentUser.friends}},
-                {isOnboarded: true}
+                {_id: {$nin: currentUser.friends}}
+                //{isOnboarded: true}
             ]
         })
         res.status(200).json(recommendedUsers);

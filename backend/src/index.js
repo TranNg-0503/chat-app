@@ -6,7 +6,8 @@ import path from "path";
 
 import authRoutes from "./routes/auth.route.js";
 import userRoutes from "./routes/user.route.js";
-//import chatRoutes from "./routes/chat.route.js";
+// import userRoutes from "./routes/user.route.js";
+// import chatRoutes from "./routes/chat.route.js";
 
 import { connectDB } from "./lib/db.js";
 
@@ -27,7 +28,9 @@ app.use(cookieParser());
 
 app.use("", authRoutes);
 app.use("/users", userRoutes);
-//app.use("/chat", chatRoutes);
+
+// app.use("/users", userRoutes);
+// app.use("/chat", chatRoutes);
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));

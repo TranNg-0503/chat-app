@@ -116,3 +116,40 @@ export async function logout (req,res){
     res.status(200).json({success: true, message: "Đăng xuất thành công"});
 
 }
+export async function onboard(req,res){
+  try{
+    const userId = req.user._id
+    const {fullName,profile, location} = req.body
+    if(!fullName||!profile||!location){
+      return res.status(400).json({message:"All fields are required, ",
+        missingFields: [
+          !fullName && "fullName",
+          !profile && "profile",
+          !location && "location",
+        ].filter(Boolean),
+      });
+    }
+    const updatedUser = await User.findByIdAndUpdate(userId,{
+      ...req.body,
+      isOnboarded: true, 
+    },{new:true})
+    if(!updatedUser) return res.status(404).json({message:"User not found"});
+    try{
+      await upsertStreamUser({
+        id: updatedUser._id.toString(),
+        name: updatedUser.fullName,
+        image: updatedUser.profilePic || "",
+      })
+      console.log('Stream user update after onboarding for ${updatedUser.fullName}');
+    }catch(streamError){
+      console.log("Error updating Stream user during onboarding:", streamError.message);
+    }
+      res.status(200).json({success: true, user: updatedUser});
+  }
+    catch(error){
+      console.error("Onboarding error", error);
+      res.status(500).json({message:"Internal server error"});
+
+    }
+  
+}
