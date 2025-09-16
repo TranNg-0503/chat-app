@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { THEMES } from "../../../theme.config";
+import { THEMES } from "../../theme.config";
 
 const ThemeToggler = () => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || THEMES.Emerald);
