@@ -1,4 +1,5 @@
 import daisyui from "daisyui";
+import { THEMES } from "../theme.config";
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -8,6 +9,6 @@ export default {
   },
   plugins: [daisyui],
   daisyui: {
-    themes: ["emerald", "night"],
+    themes: THEMES,
   },
 };
