@@ -3,20 +3,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/login";
 import Onboard from "./pages/onboard";
 import Signup from "./pages/signup";
+import Dashboard from "./pages/dashboard";
+import Friend from "./pages/friend";
 import ThemeToggler from "./components/ThemeToggler";
-
-function Home() {
-  return (
-    <div className="min-h-screen p-6 bg-base-200">
-      <div className="max-w-xl mx-auto card bg-base-100 shadow">
-        <div className="card-body">
-          <h2 className="card-title">Trang chính</h2>
-          <p>Bạn đã đăng nhập.</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function App() {
   return (
@@ -26,15 +15,25 @@ export default function App() {
           path="/"
           element={
             <ProtectedRoute>
-              <Home />
+              <Dashboard />
             </ProtectedRoute>
           }
         />
+        <Route path="/dashboard" element={<Navigate to="/" replace />} />
+
         <Route
           path="/onboard"
           element={
             <ProtectedRoute>
               <Onboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/friends"
+          element={
+            <ProtectedRoute>
+              <Friend />
             </ProtectedRoute>
           }
         />
