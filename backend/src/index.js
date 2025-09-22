@@ -9,7 +9,7 @@ import userRoutes from "./routes/user.route.js";
 import chatRoutes from "./routes/chat.route.js";
 
 import { connectDB } from "./lib/db.js";
-
+const apiKey = process.env.GROQ_API_KEY;
 const app = express();
 const PORT = process.env.PORT;
 
