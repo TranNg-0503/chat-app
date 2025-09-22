@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api";
+import { UserContext } from "../components/providers/AuthProvider";
 
 export default function Onboard() {
   const navigate = useNavigate();
@@ -8,7 +9,7 @@ export default function Onboard() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [errMsg, setErrMsg] = useState("");
-
+  const { reloadUserData } = useContext(UserContext);
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   // Lấy sẵn thông tin user để prefill tên
@@ -48,6 +49,7 @@ export default function Onboard() {
         profile: form.profile.trim(),
         location: form.location.trim(),
       });
+      await reloadUserData();
       navigate("/", { replace: true }); // vào trang chính
     } catch (err) {
       const msg =
