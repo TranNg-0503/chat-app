@@ -10,7 +10,6 @@ import Sidebar from "../../components/sidebar";
 import {
   Chat,
   Channel,
-  ChannelHeader,
   ChannelList,
   MessageInput,
   MessageList,
@@ -18,6 +17,7 @@ import {
   Window,
   LoadingIndicator,
 } from "stream-chat-react";
+import ChannelHeaderWithCall from "./components/ChannelHeaderWithCall";
 import api from "../../api";
 import { ThemeContext } from "../../components/providers/ThemeProvider";
 import { THEMES } from "../../../theme.config";
@@ -151,6 +151,12 @@ export default function UserChatPage() {
     };
   }, [client]);
 
+  // Placeholder for call
+  const handleStartCall = (channel) => {
+    console.log("Start video call with channel", channel?.id);
+    // Later integrate @stream-io/video-react-sdk here
+  };
+
   if (isConnecting) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -186,7 +192,7 @@ export default function UserChatPage() {
           <div className="flex-[3]">
             <Channel>
               <Window>
-                <ChannelHeader />
+                <ChannelHeaderWithCall onStartCall={handleStartCall} />
                 <MessageList />
                 <MessageInput focus />
               </Window>
