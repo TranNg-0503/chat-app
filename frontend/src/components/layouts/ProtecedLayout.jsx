@@ -5,7 +5,7 @@ import Sidebar from "../sidebar";
 const ProtectedLayout = ({ children }) => {
   return (
     <AuthProvider>
-      <div className="flex min-h-screen bg-base-200">
+      <div className="flex h-screen bg-base-200">
         {/* Sidebar bên trái */}
         <Sidebar />
 
