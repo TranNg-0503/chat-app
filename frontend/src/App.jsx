@@ -5,7 +5,6 @@ import Signup from "./pages/signup";
 import Dashboard from "./pages/dashboard";
 import Friend from "./pages/friend";
 import UserChatPage from "./pages/user-chat";
-import ThemeToggler from "./components/ThemeToggler";
 import ThemeProvider from "./components/providers/ThemeProvider";
 import ProtectedLayout from "./components/layouts/ProtecedLayout";
 
@@ -29,8 +28,6 @@ export default function App() {
             element={
               <ProtectedLayout>
                 <Onboard />
-                {/* Onboard không có Sidebar nên để ThemeToggler ở đây */}
-                <ThemeToggler />
               </ProtectedLayout>
             }
           />
