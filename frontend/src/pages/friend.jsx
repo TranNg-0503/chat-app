@@ -166,7 +166,7 @@ export default function Friend() {
   );
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col overflow-auto">
       {/* Header */}
       <header className="flex items-center justify-between bg-base-100 shadow px-6 py-3">
         <h1 className="text-lg font-semibold">Kết bạn & Bạn bè</h1>

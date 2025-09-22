@@ -171,18 +171,19 @@ export default function UserChatPage() {
   if (!client) return null;
 
   return (
-    <div className="flex-1 flex flex-col">
+    <div className="flex-1 flex flex-col min-h-0">
       <Chat client={client} theme={chatColorTheme}>
         <QuickDM
-          className="flex-none "
+          className="flex-none"
           onCreateDM={handleCreateDM}
           onCreateGroup={handleCreateGroup}
         />
-        <div className="flex h-full">
-          <div className="h-full flex-1 max-w-80 min-w-56">
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 max-w-80 min-w-56">
             <ChannelList filters={filters} sort={sort} options={options} />
           </div>
-          <div className="h-full flex-[3]">
+
+          <div className="flex-[3]">
             <Channel>
               <Window>
                 <ChannelHeader />
