@@ -72,7 +72,7 @@ export default function Onboard() {
   }
 
   return (
-    <div className="min-h-screen hero bg-base-200">
+    <div className="flex-1 hero bg-base-200">
       <div className="hero-content w-full max-w-2xl">
         <div className="card w-full bg-base-100 shadow-2xl">
           <form className="card-body" onSubmit={onSubmit} noValidate>
