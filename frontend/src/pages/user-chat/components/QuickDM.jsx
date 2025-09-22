@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useContext } from "react";
 import CreateGroupChatModal from "./CreateGroupChatModal";
 import { useDebounce } from "../../../utilities/hooks/useDebounce";
 import api from "../../../api";
+import { UserContext } from "../../../components/providers/AuthProvider";
 
 const searchUserRequest = async (query) => {
   const { data: results } = await api.get(`/users/search`, {
@@ -14,6 +15,7 @@ const searchUserRequest = async (query) => {
 };
 
 function QuickDM({ onCreateDM, onCreateGroup, className }) {
+  const { user } = useContext(UserContext);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [showGroupModal, setShowGroupModal] = useState(false);
@@ -28,11 +30,11 @@ function QuickDM({ onCreateDM, onCreateGroup, className }) {
 
       const results = await searchUserRequest(searchDebounced);
 
-      setSearchResults(results);
+      setSearchResults(results.filter((result) => result._id !== user?._id));
     };
 
     searchUsers();
-  }, [searchDebounced]);
+  }, [searchDebounced, user]);
 
   const handleCreateDM = (userId) => {
     setSearchResults([]);
