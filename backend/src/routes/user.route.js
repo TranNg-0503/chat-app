@@ -8,6 +8,9 @@ import {
   acceptFriendRequest,
   getOutgoingFriendReqs,
   getFriendRequests,
+  rejectFriendRequest,
+  unsendFriendRequest,
+  unFriend,
 } from "../controllers/user.controller.js";
 const route = express.Router();
 
@@ -18,7 +21,11 @@ route.get("/friends", getMyFriends);
 route.get("/search", searchUsers);
 
 route.post("/friend-request/:id", sendFriendRequest);
+route.delete("/friend-request/:id", unsendFriendRequest);
 route.put("/friend-request/:id/accept", acceptFriendRequest);
+route.delete("/friend-request/:id/reject", rejectFriendRequest);
+route.delete("/friends/:id", unFriend);
+
 
 route.get("/friend-request", getFriendRequests);
 route.get("/outgoing-friend-request", getOutgoingFriendReqs);
