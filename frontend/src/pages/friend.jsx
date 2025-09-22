@@ -166,189 +166,150 @@ export default function Friend() {
   );
 
   return (
-    <div className="flex min-h-screen bg-base-200">
-      <Sidebar />
+    <div className="flex-1 flex flex-col">
+      {/* Header */}
+      <header className="flex items-center justify-between bg-base-100 shadow px-6 py-3">
+        <h1 className="text-lg font-semibold">Kết bạn & Bạn bè</h1>
 
-      <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <header className="flex items-center justify-between bg-base-100 shadow px-6 py-3">
-          <h1 className="text-lg font-semibold">Kết bạn & Bạn bè</h1>
+        <div className="flex items-center gap-2">
+          <Tab id="friends" icon={Users} label="Bạn bè" />
+          <Tab id="requests" icon={MailCheck} label="Lời mời" />
+          <Tab id="discover" icon={UserPlus} label="Khám phá" />
+        </div>
+      </header>
 
-          <div className="flex items-center gap-2">
-            <Tab id="friends" icon={Users} label="Bạn bè" />
-            <Tab id="requests" icon={MailCheck} label="Lời mời" />
-            <Tab id="discover" icon={UserPlus} label="Khám phá" />
-          </div>
-        </header>
+      {/* Body */}
+      <main className="flex-1 p-6 space-y-6">
+        {/* Friends */}
+        {activeTab === "friends" && (
+          <section className="space-y-4">
+            <h2 className="font-semibold">Danh sách bạn bè</h2>
+            {loading ? (
+              <div className="flex items-center gap-2 opacity-80">
+                <Loader2 className="animate-spin" size={18} /> Đang tải...
+              </div>
+            ) : friends.length === 0 ? (
+              <p>Chưa có bạn bè nào.</p>
+            ) : (
+              <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {friends.map((f) => (
+                  <PersonItem key={f._id} person={f} />
+                ))}
+              </ul>
+            )}
+          </section>
+        )}
 
-        {/* Body */}
-        <main className="flex-1 p-6 space-y-6">
-          {/* Friends */}
-          {activeTab === "friends" && (
-            <section className="space-y-4">
-              <h2 className="font-semibold">Danh sách bạn bè</h2>
+        {/* Requests */}
+        {activeTab === "requests" && (
+          <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Incoming */}
+            <div className="space-y-4">
+              <h2 className="font-semibold">Lời mời đến</h2>
               {loading ? (
                 <div className="flex items-center gap-2 opacity-80">
                   <Loader2 className="animate-spin" size={18} /> Đang tải...
                 </div>
-              ) : friends.length === 0 ? (
-                <p>Chưa có bạn bè nào.</p>
+              ) : incomingReqs.length === 0 ? (
+                <p>Không có lời mời nào.</p>
               ) : (
-                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {friends.map((f) => (
-                    <PersonItem key={f._id} person={f} />
+                <ul className="space-y-3">
+                  {incomingReqs.map((req) => (
+                    <PersonItem
+                      key={req._id}
+                      person={req.sender}
+                      right={
+                        <button
+                          onClick={() => acceptRequest(req._id)}
+                          className="btn btn-sm btn-primary"
+                        >
+                          Chấp nhận
+                        </button>
+                      }
+                    />
                   ))}
                 </ul>
               )}
-            </section>
-          )}
+            </div>
 
-          {/* Requests */}
-          {activeTab === "requests" && (
-            <section className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Incoming */}
-              <div className="space-y-4">
-                <h2 className="font-semibold">Lời mời đến</h2>
+            {/* Outgoing pending + Accepted (tham khảo) */}
+            <div className="space-y-4">
+              <h2 className="font-semibold">Đã gửi / Đã kết bạn</h2>
+
+              <div className="space-y-2">
+                <h3 className="text-sm opacity-70">Đã gửi (chờ phản hồi)</h3>
                 {loading ? (
                   <div className="flex items-center gap-2 opacity-80">
                     <Loader2 className="animate-spin" size={18} /> Đang tải...
                   </div>
-                ) : incomingReqs.length === 0 ? (
-                  <p>Không có lời mời nào.</p>
+                ) : outgoingReqs.length === 0 ? (
+                  <p>Không có lời mời đã gửi.</p>
                 ) : (
                   <ul className="space-y-3">
-                    {incomingReqs.map((req) => (
+                    {outgoingReqs.map((req) => (
                       <PersonItem
                         key={req._id}
-                        person={req.sender}
-                        right={
-                          <button
-                            onClick={() => acceptRequest(req._id)}
-                            className="btn btn-sm btn-primary"
-                          >
-                            Chấp nhận
-                          </button>
-                        }
+                        person={req.recipient}
+                        right={<span className="badge">Đang chờ</span>}
                       />
                     ))}
                   </ul>
                 )}
               </div>
 
-              {/* Outgoing pending + Accepted (tham khảo) */}
-              <div className="space-y-4">
-                <h2 className="font-semibold">Đã gửi / Đã kết bạn</h2>
-
-                <div className="space-y-2">
-                  <h3 className="text-sm opacity-70">Đã gửi (chờ phản hồi)</h3>
-                  {loading ? (
-                    <div className="flex items-center gap-2 opacity-80">
-                      <Loader2 className="animate-spin" size={18} /> Đang tải...
-                    </div>
-                  ) : outgoingReqs.length === 0 ? (
-                    <p>Không có lời mời đã gửi.</p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {outgoingReqs.map((req) => (
-                        <PersonItem
-                          key={req._id}
-                          person={req.recipient}
-                          right={<span className="badge">Đang chờ</span>}
-                        />
-                      ))}
-                    </ul>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-sm opacity-70">Đã chấp nhận gần đây</h3>
-                  {acceptedReqs.length === 0 ? (
-                    <p>Chưa có bản ghi.</p>
-                  ) : (
-                    <ul className="space-y-3">
-                      {acceptedReqs.map((req) => (
-                        <PersonItem
-                          key={req._id}
-                          person={req.recipient}
-                          right={
-                            <span className="badge badge-success">
-                              Đã là bạn
-                            </span>
-                          }
-                        />
-                      ))}
-                    </ul>
-                  )}
-                </div>
+              <div className="space-y-2">
+                <h3 className="text-sm opacity-70">Đã chấp nhận gần đây</h3>
+                {acceptedReqs.length === 0 ? (
+                  <p>Chưa có bản ghi.</p>
+                ) : (
+                  <ul className="space-y-3">
+                    {acceptedReqs.map((req) => (
+                      <PersonItem
+                        key={req._id}
+                        person={req.recipient}
+                        right={
+                          <span className="badge badge-success">Đã là bạn</span>
+                        }
+                      />
+                    ))}
+                  </ul>
+                )}
               </div>
-            </section>
-          )}
+            </div>
+          </section>
+        )}
 
-          {/* Discover */}
-          {activeTab === "discover" && (
-            <section className="space-y-6">
-              <div className="flex items-center gap-2">
-                <div className="join w-full max-w-xl">
-                  <input
-                    type="text"
-                    className="input input-bordered join-item w-full"
-                    placeholder="Tìm theo tên hoặc email (ví dụ: @gmail)"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                  />
-                  <button className="btn join-item">
-                    <Search size={18} />
-                  </button>
-                </div>
+        {/* Discover */}
+        {activeTab === "discover" && (
+          <section className="space-y-6">
+            <div className="flex items-center gap-2">
+              <div className="join w-full max-w-xl">
+                <input
+                  type="text"
+                  className="input input-bordered join-item w-full"
+                  placeholder="Tìm theo tên hoặc email (ví dụ: @gmail)"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+                <button className="btn join-item">
+                  <Search size={18} />
+                </button>
               </div>
+            </div>
 
-              {/* Search results */}
-              {query.trim() && (
-                <div className="space-y-3">
-                  <h3 className="font-semibold">Kết quả tìm kiếm</h3>
-                  {searching ? (
-                    <div className="flex items-center gap-2 opacity-80">
-                      <Loader2 className="animate-spin" size={18} /> Đang tìm...
-                    </div>
-                  ) : searchResults.length === 0 ? (
-                    <p>Không tìm thấy người dùng.</p>
-                  ) : (
-                    <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {searchResults.map((u) => (
-                        <PersonItem
-                          key={u._id}
-                          person={u}
-                          right={
-                            requesterIdsPending.has(u._id) ? (
-                              <span className="badge">Đã gửi</span>
-                            ) : (
-                              <button
-                                className="btn btn-sm btn-primary"
-                                onClick={() => sendRequest(u._id)}
-                              >
-                                Gửi lời mời
-                              </button>
-                            )
-                          }
-                        />
-                      ))}
-                    </ul>
-                  )}
-                </div>
-              )}
-
-              {/* Recommended */}
+            {/* Search results */}
+            {query.trim() && (
               <div className="space-y-3">
-                <h3 className="font-semibold">Gợi ý kết bạn</h3>
-                {discoverLoading ? (
+                <h3 className="font-semibold">Kết quả tìm kiếm</h3>
+                {searching ? (
                   <div className="flex items-center gap-2 opacity-80">
-                    <Loader2 className="animate-spin" size={18} /> Đang tải...
+                    <Loader2 className="animate-spin" size={18} /> Đang tìm...
                   </div>
-                ) : recommended.length === 0 ? (
-                  <p>Chưa có gợi ý.</p>
+                ) : searchResults.length === 0 ? (
+                  <p>Không tìm thấy người dùng.</p>
                 ) : (
                   <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {recommended.map((u) => (
+                    {searchResults.map((u) => (
                       <PersonItem
                         key={u._id}
                         person={u}
@@ -357,10 +318,10 @@ export default function Friend() {
                             <span className="badge">Đã gửi</span>
                           ) : (
                             <button
-                              className="btn btn-sm btn-outline"
+                              className="btn btn-sm btn-primary"
                               onClick={() => sendRequest(u._id)}
                             >
-                              Kết bạn
+                              Gửi lời mời
                             </button>
                           )
                         }
@@ -369,10 +330,43 @@ export default function Friend() {
                   </ul>
                 )}
               </div>
-            </section>
-          )}
-        </main>
-      </div>
+            )}
+
+            {/* Recommended */}
+            <div className="space-y-3">
+              <h3 className="font-semibold">Gợi ý kết bạn</h3>
+              {discoverLoading ? (
+                <div className="flex items-center gap-2 opacity-80">
+                  <Loader2 className="animate-spin" size={18} /> Đang tải...
+                </div>
+              ) : recommended.length === 0 ? (
+                <p>Chưa có gợi ý.</p>
+              ) : (
+                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {recommended.map((u) => (
+                    <PersonItem
+                      key={u._id}
+                      person={u}
+                      right={
+                        requesterIdsPending.has(u._id) ? (
+                          <span className="badge">Đã gửi</span>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-outline"
+                            onClick={() => sendRequest(u._id)}
+                          >
+                            Kết bạn
+                          </button>
+                        )
+                      }
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
+          </section>
+        )}
+      </main>
     </div>
   );
 }

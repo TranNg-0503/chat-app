@@ -1,20 +1,16 @@
-import { useState, useEffect } from "react";
+import { useContext } from "react";
 import { THEMES } from "../../theme.config";
+import { ThemeContext } from "./providers/ThemeProvider";
 
-const ThemeToggler = () => {
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || THEMES.Emerald);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
+const ThemeToggler = ({ className }) => {
+  const { theme, setTheme } = useContext(ThemeContext);
 
   const handleToggleTheme = (e) => {
     setTheme(e.target.checked ? THEMES.Night : THEMES.Emerald);
-  }
+  };
 
   return (
-    <div className="fixed bottom-4 right-4">
+    <div className={className ?? "fixed bottom-4 right-4"}>
       <label className="flex cursor-pointer gap-2">
         <svg
           xmlns="http://www.w3.org/2000/svg"
