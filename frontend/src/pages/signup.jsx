@@ -60,6 +60,7 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen hero bg-base-200">
+      <Sidebar />
       <div className="hero-content w-full max-w-lg">
         <div className="card w-full bg-base-100 shadow-2xl">
           <form className="card-body" onSubmit={onSubmit} noValidate>

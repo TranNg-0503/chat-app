@@ -32,8 +32,8 @@ export default function Sidebar() {
           <Users size={18} /> Friend
         </NavLink>
 
-        <NavLink to="/dashboard/messages" className={linkClass}>
-          <MessageSquareText size={18} /> Message
+        <NavLink to="/chat-user" className={linkClass}>
+          <MessageSquareText size={18} /> Chat với người dùng
         </NavLink>
 
         {/* onboard*/}

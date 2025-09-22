@@ -9,7 +9,7 @@ export default function Friend() {
   const [friends, setFriends] = useState([]);
 
   const [incomingReqs, setIncomingReqs] = useState([]); // lời mời đến
-  const [acceptedReqs, setAcceptedReqs] = useState([]); // đã chấp nhận (để tham khảo)
+  const [acceptedReqs, setAcceptedReqs] = useState([]); // đã chấp nhận
   const [outgoingReqs, setOutgoingReqs] = useState([]); // đã gửi
 
   const [discoverLoading, setDiscoverLoading] = useState(false);

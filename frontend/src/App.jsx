@@ -5,6 +5,7 @@ import Onboard from "./pages/onboard";
 import Signup from "./pages/signup";
 import Dashboard from "./pages/dashboard";
 import Friend from "./pages/friend";
+import UserChatPage from "./pages/user-chat";
 import ThemeToggler from "./components/ThemeToggler";
 
 export default function App() {
@@ -34,6 +35,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Friend />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/chat-user"
+          element={
+            <ProtectedRoute>
+              <UserChatPage />
             </ProtectedRoute>
           }
         />
