@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useDebounce } from "../../../utilities/hooks/useDebounce";
 import api from "../../../api";
+import { UserContext } from "../../../components/providers/AuthProvider";
 
 function CreateGroupChatModal({ open, onClose, onCreateGroup }) {
+  const { user } = useContext(UserContext);
   const [groupName, setGroupName] = useState("");
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -22,14 +24,14 @@ function CreateGroupChatModal({ open, onClose, onCreateGroup }) {
         const { data } = await api.get("/users/search", {
           params: { query: debouncedSearch },
         });
-        setSearchResults(data);
+        setSearchResults(data.filter((u) => u._id !== user?._id));
       } catch (error) {
         console.error("Error searching users", error);
       }
     };
 
     fetchUsers();
-  }, [debouncedSearch]);
+  }, [debouncedSearch, user]);
 
   // helper handlers
   const addUser = (user) => {

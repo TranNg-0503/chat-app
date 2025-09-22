@@ -6,7 +6,6 @@ import React, {
   useContext,
 } from "react";
 import { StreamChat } from "stream-chat";
-import Sidebar from "../../components/sidebar";
 import {
   Chat,
   Channel,
@@ -94,7 +93,7 @@ export default function UserChatPage() {
   const filters = useMemo(() => {
     if (!currentUser) return {};
     return {
-      type: "messaging",
+      type: { $in: ["messaging"] },
       members: { $in: [currentUser.id] },
     };
   }, [currentUser]);
@@ -121,6 +120,7 @@ export default function UserChatPage() {
     },
     [client]
   );
+
   // Tạo nhóm chat
   const handleCreateGroup = useCallback(
     async (memberIds, groupName) => {
@@ -133,7 +133,7 @@ export default function UserChatPage() {
         new Set([...memberIds.map(String), myId])
       );
 
-      const channel = client.channel("messaging", undefined, {
+      const channel = client.channel("messaging", null, {
         name: groupName || undefined,
         members: finalMembers,
       });
