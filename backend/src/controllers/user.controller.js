@@ -103,6 +103,94 @@ export async function sendFriendRequest(req, res) {
   }
 }
 
+export async function unsendFriendRequest(req, res) {
+  try {
+    const myId = req.user.id;
+    const { id: recipientId } = req.params;
+
+    if (myId === recipientId) {
+      return res
+        .status(400)
+        .json({ message: "Bạn không thể thao tác với chính mình" });
+    }
+
+    const recipient = await User.findById(recipientId);
+    if (!recipient) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // Chỉ tìm lời mời do chính mình gửi
+    const existingRequest = await FriendRequest.findOne({
+      sender: myId,
+      recipient: recipientId,
+      status: "pending", // Chỉ huỷ lời mời đang chờ
+    });
+
+    if (!existingRequest) {
+      return res
+        .status(404)
+        .json({ message: "Không tìm thấy lời mời kết bạn để huỷ" });
+    }
+
+    await FriendRequest.findByIdAndDelete(existingRequest._id);
+
+    res.status(200).json({ message: "Đã huỷ lời mời kết bạn" });
+  } catch (error) {
+    console.error("Lỗi trong unsendFriendRequest controller", error.message);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+}
+
+export async function unFriend(req, res) {
+  try {
+    const myId = req.user.id;
+    const { id: friendId } = req.params;
+
+    if (myId === friendId) {
+      return res
+        .status(400)
+        .json({ message: "Bạn không thể thao tác với chính mình" });
+    }
+
+    const friend = await User.findById(friendId);
+    if (!friend) {
+      return res.status(404).json({ message: "Không tìm thấy người dùng" });
+    }
+
+    // Kiểm tra xem có phải bạn bè không
+    const me = await User.findById(myId);
+    if (!me.friends.includes(friendId)) {
+      return res.status(400).json({ message: "Người này không phải bạn bè của bạn" });
+    }
+
+    // Xoá bạn bè khỏi cả 2 user
+    await User.findByIdAndUpdate(myId, {
+      $pull: { friends: friendId },
+    });
+
+    await User.findByIdAndUpdate(friendId, {
+      $pull: { friends: myId },
+    });
+
+    // Nếu có request đã accept thì xoá luôn để sạch DB
+    await FriendRequest.findOneAndDelete({
+      $or: [
+        { sender: myId, recipient: friendId, status: "accepted" },
+        { sender: friendId, recipient: myId, status: "accepted" },
+      ],
+    });
+
+    res.status(200).json({ message: "Đã huỷ kết bạn thành công" });
+  } catch (error) {
+    console.error("Lỗi trong unFriend controller", error.message);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+}
+
+
+
+
+
 export async function acceptFriendRequest(req, res) {
   try {
     const { id: requestId } = req.params;
@@ -135,6 +223,33 @@ export async function acceptFriendRequest(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
+
+export async function rejectFriendRequest(req, res) {
+  try {
+    const { id: requestId } = req.params;
+    const friendRequest = await FriendRequest.findById(requestId);
+
+    if (!friendRequest) {
+      return res.status(404).json({ message: "Không tìm thấy yêu cầu" });
+    }
+
+    if (friendRequest.recipient.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "bạn không có quyền từ chối yêu cầu" });
+    }
+
+     // Xóa lời mời kết bạn
+    await FriendRequest.findByIdAndDelete(requestId);
+
+    res.status(200).json({ message: "Đã từ chối và xóa lời mời kết bạn" });
+  } catch (error) {
+    console.log("Lỗi trong hàm rejectFriendRequest", error.message);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+}
+
+
 
 export async function getFriendRequests(req, res) {
   try {
