@@ -92,6 +92,18 @@ export default function Friend() {
       alert("Không thể chấp nhận yêu cầu. Vui lòng thử lại.");
     }
   };
+  const rejectRequest = async (requestId) => {
+    try {
+      await api.delete(`/users/friend-request/${requestId}/reject`, {
+        withCredentials: true,
+      });
+      // refresh
+      await Promise.all([fetchFriends(), fetchRequests()]);
+    } catch (e) {
+      console.error("Reject friend request error:", e);
+      alert("Không thể từ chối yêu cầu. Vui lòng thử lại.");
+    }
+  };
 
   const sendRequest = async (userId) => {
     try {
@@ -103,6 +115,32 @@ export default function Friend() {
     } catch (e) {
       console.error("Send friend request error:", e);
       alert(e?.response?.data?.message || "Gửi lời mời thất bại.");
+    }
+  };
+
+  const unsendRequest = async (userId) => {
+    try {
+      await api.delete(`/users/friend-request/${userId}`, {
+        withCredentials: true,
+      });
+      // refresh outgoing
+      await fetchRequests();
+    } catch (e) {
+      console.error("Unsend friend request error:", e);
+      alert(e?.response?.data?.message || "Hủy lời mời thất bại.");
+    }
+  };
+
+  const unFriend = async (userId) => {
+    try {
+      await api.delete(`/users/friends/${userId}`, {
+        withCredentials: true,
+      });
+      // refresh outgoing
+      await fetchFriends();
+    } catch (e) {
+      console.error("Unfriend request error:", e);
+      alert(e?.response?.data?.message || "Hủy kết bạn thất bại.");
     }
   };
 
@@ -193,7 +231,15 @@ export default function Friend() {
             ) : (
               <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {friends.map((f) => (
-                  <PersonItem key={f._id} person={f} />
+                  <PersonItem key={f._id} person={f}
+                  right={
+                    <button 
+                      className="btn btn-sm btn-error"
+                      onClick={() => unFriend(f._id)}
+                    >
+                      Hủy kết bạn
+                    </button>
+                  } />
                 ))}
               </ul>
             )}
@@ -219,12 +265,20 @@ export default function Friend() {
                       key={req._id}
                       person={req.sender}
                       right={
-                        <button
-                          onClick={() => acceptRequest(req._id)}
-                          className="btn btn-sm btn-primary"
-                        >
-                          Chấp nhận
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => acceptRequest(req._id)}
+                            className="btn btn-sm btn-primary"
+                          >
+                            Chấp nhận
+                          </button>
+                          <button
+                            onClick={() => rejectRequest(req._id)}
+                            className="btn btn-sm btn-error"
+                          >
+                            Từ chối
+                          </button>
+                        </div>
                       }
                     />
                   ))}
@@ -250,7 +304,15 @@ export default function Friend() {
                       <PersonItem
                         key={req._id}
                         person={req.recipient}
-                        right={<span className="badge">Đang chờ</span>}
+                        right={<div className="flex items-center gap-2">
+                                <span className="badge">Đang chờ</span>
+                                <button
+                                  onClick={() => unsendRequest(req.recipient._id)}
+                                  className="btn btn-sm btn-error"
+                                >
+                                  Hủy lời mời
+                                </button>
+                              </div>}
                       />
                     ))}
                   </ul>
