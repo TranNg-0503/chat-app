@@ -1,58 +1,59 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/login";
 import Onboard from "./pages/onboard";
 import Signup from "./pages/signup";
 import Dashboard from "./pages/dashboard";
 import Friend from "./pages/friend";
 import UserChatPage from "./pages/user-chat";
-import ThemeToggler from "./components/ThemeToggler";
+import ThemeProvider from "./components/providers/ThemeProvider";
+import ProtectedLayout from "./components/layouts/ProtecedLayout";
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/dashboard" element={<Navigate to="/" replace />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <ProtectedLayout>
+                <Dashboard />
+              </ProtectedLayout>
+            }
+          />
+          <Route path="/dashboard" element={<Navigate to="/" replace />} />
 
-        <Route
-          path="/onboard"
-          element={
-            <ProtectedRoute>
-              <Onboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/friends"
-          element={
-            <ProtectedRoute>
-              <Friend />
-            </ProtectedRoute>
-          }
-        />
+          <Route
+            path="/onboard"
+            element={
+              <ProtectedLayout>
+                <Onboard />
+              </ProtectedLayout>
+            }
+          />
+          <Route
+            path="/friends"
+            element={
+              <ProtectedLayout>
+                <Friend />
+              </ProtectedLayout>
+            }
+          />
 
-        <Route
-          path="/chat-user"
-          element={
-            <ProtectedRoute>
-              <UserChatPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+          <Route
+            path="/chat-user"
+            element={
+              <ProtectedLayout>
+                <UserChatPage />
+              </ProtectedLayout>
+            }
+          />
 
-      <ThemeToggler />
-    </BrowserRouter>
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }

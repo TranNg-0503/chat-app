@@ -1,7 +1,3 @@
-import { useEffect, useState } from "react";
-import Sidebar from "../components/sidebar";
-import api from "../api";
-
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const [isOpen, setIsOpen] = useState(false); // panel đổi ảnh

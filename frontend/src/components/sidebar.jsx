@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { Users, MessageSquareText, Pencil, LogOut } from "lucide-react";
+import ThemeToggler from "./ThemeToggler";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -24,8 +25,10 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="w-64 min-h-screen bg-base-100 shadow-md p-4">
-      <h2 className="text-xl font-bold mb-6">Dashboard</h2>
+    <div className="w-64 min-h-screen bg-base-100 shadow-md p-4 flex flex-col">
+      <NavLink to="/">
+        <h2 className="text-xl font-bold mb-6">Dashboard</h2>
+      </NavLink>
 
       <nav className="flex flex-col gap-2">
         <NavLink to="/friends" className={linkClass}>
@@ -48,6 +51,8 @@ export default function Sidebar() {
           <LogOut size={18} /> Sign out
         </button>
       </nav>
+
+      <ThemeToggler className="block mt-auto mx-auto" />
     </div>
   );
 }
