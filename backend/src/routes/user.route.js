@@ -1,5 +1,7 @@
 import express from "express";
-import { protectRoute } from "../middleware/auth.middleware.js";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../lib/cloudinary.js";
+import multer from "multer";
 import {
   getMyFriends,
   getRecommendedUsers,
@@ -11,22 +13,43 @@ import {
   rejectFriendRequest,
   unsendFriendRequest,
   unFriend,
+  uploadAvatar,
 } from "../controllers/user.controller.js";
-const route = express.Router();
+import { protectRoute } from "../middleware/auth.middleware.js";
 
-route.use(protectRoute);
+const router = express.Router();
 
-route.get("/", getRecommendedUsers);
-route.get("/friends", getMyFriends);
-route.get("/search", searchUsers);
+// Áp dụng middleware auth cho tất cả route
+router.use(protectRoute);
 
-route.post("/friend-request/:id", sendFriendRequest);
-route.delete("/friend-request/:id", unsendFriendRequest);
-route.put("/friend-request/:id/accept", acceptFriendRequest);
-route.delete("/friend-request/:id/reject", rejectFriendRequest);
-route.delete("/friends/:id", unFriend);
+router.get("/", getRecommendedUsers);
+router.get("/friends", getMyFriends);
+router.get("/search", searchUsers);
 
+router.post("/friend-request/:id", sendFriendRequest);
+router.delete("/friend-request/:id", unsendFriendRequest);
+router.put("/friend-request/:id/accept", acceptFriendRequest);
+router.delete("/friend-request/:id/reject", rejectFriendRequest);
+router.delete("/friends/:id", unFriend);
 
-route.get("/friend-request", getFriendRequests);
-route.get("/outgoing-friend-request", getOutgoingFriendReqs);
-export default route;
+router.get("/friend-request", getFriendRequests);
+router.get("/outgoing-friend-request", getOutgoingFriendReqs);
+
+// // Cấu hình multer
+// const upload = multer({ dest: "uploads/" });
+
+// // Route upload avatar
+// router.post("/me/avatar", upload.single("avatar"), uploadAvatar);
+
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "avatars",       // lưu vào folder "avatars" trên Cloudinary
+    allowed_formats: ["jpg", "png", "jpeg"],
+  },
+});
+
+const upload = multer({ storage });
+// Route upload avatar
+router.post("/me/avatar", upload.single("avatar"), uploadAvatar);
+export default router;

@@ -282,3 +282,26 @@ export async function getOutgoingFriendReqs(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
+// avatar
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ error: "Chưa có file tải lên" });
+    }
+
+    // Cloudinary trả về link sẵn trong req.file.path
+    const avatarUrl = req.file.path;
+
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      { profilePic: avatarUrl },
+      { new: true }
+    );
+
+    res.json({ profilePic: user.profilePic });
+  } catch (err) {
+    console.error("Upload avatar error:", err);
+    res.status(500).json({ error: "Lỗi server khi upload" });
+  }
+};
+
