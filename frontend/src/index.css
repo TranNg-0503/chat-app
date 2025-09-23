@@ -7,3 +7,9 @@
 * {
   box-sizing: border-box;
 }
+
+/* Hide pin and archive button */
+.str-chat__channel-preview__action-button--archive,
+.str-chat__channel-preview__action-button--pin {
+  display: none;
+}
