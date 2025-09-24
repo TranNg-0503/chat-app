@@ -9,65 +9,78 @@ import ThemeProvider from "./components/providers/ThemeProvider";
 import ProtectedLayout from "./components/layouts/ProtecedLayout";
 import CallPage from "./pages/call.jsx";
 import AuthGuard from "./components/layouts/AuthGuard";
+import AuthProvider from "./components/providers/AuthProvider";
+import AIChatPage from "./pages/ai-chat";
+
 export default function App() {
   return (
     <ThemeProvider>
       <BrowserRouter>
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <ProtectedLayout>
-                <Dashboard />
-              </ProtectedLayout>
-            }
-          />
-          <Route path="/dashboard" element={<Navigate to="/" replace />} />
+        <AuthProvider>
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <ProtectedLayout>
+                  <Dashboard />
+                </ProtectedLayout>
+              }
+            />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
 
-          <Route
-            path="/onboard"
-            element={
-              <ProtectedLayout>
-                <Onboard />
-              </ProtectedLayout>
-            }
-          />
+            <Route
+              path="/onboard"
+              element={
+                <ProtectedLayout>
+                  <Onboard />
+                </ProtectedLayout>
+              }
+            />
 
-          <Route
-            path="/friends"
-            element={
-              <ProtectedLayout>
-                <Friend />
-              </ProtectedLayout>
-            }
-          />
+            <Route
+              path="/friends"
+              element={
+                <ProtectedLayout>
+                  <Friend />
+                </ProtectedLayout>
+              }
+            />
 
-          <Route
-            path="/chat-user"
-            element={
-              <ProtectedLayout>
-                <UserChatPage />
-              </ProtectedLayout>
-            }
-          />
+            <Route
+              path="/chat-user"
+              element={
+                <ProtectedLayout>
+                  <UserChatPage />
+                </ProtectedLayout>
+              }
+            />
 
-          {/* Thêm route video call */}
-          <Route
-            path="/call/:id"
-            element={
-              <AuthGuard>
-                <CallPage />
-              </AuthGuard>
-            }
-          />
+            <Route
+              path="/chat-ai"
+              element={
+                <ProtectedLayout>
+                  <AIChatPage />
+                </ProtectedLayout>
+              }
+            />
 
+            {/* Video call */}
+            <Route
+              path="/call/:id"
+              element={
+                <AuthGuard>
+                  <CallPage />
+                </AuthGuard>
+              }
+            />
 
-          <Route path="/login" element={<Login />} />
-          <Route path="/signup" element={<Signup />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/signup" element={<Signup />} />
 
-          {/* fallback */}
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
+            {/* fallback */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>
   );

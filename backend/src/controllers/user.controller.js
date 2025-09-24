@@ -37,19 +37,34 @@ export async function getMyFriends(req, res) {
 
 export async function searchUsers(req, res) {
   try {
-    const { query } = req.query; // Lấy input từ query param, vd: /search?query=...
+    const { query } = req.query; // /search?query=...
+    const userId = req.user._id; // id của user đang đăng nhập
     let users = [];
 
     if (!query) {
       return res.status(400).json({ message: "Vui lòng nhập query" });
     }
 
+    // Lấy danh sách bạn bè của user hiện tại
+    const currentUser = await User.findById(userId).select("friends");
+    if (!currentUser) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    const friendIds = currentUser.friends; // giả sử trường "friends" là array các ObjectId
+
     if (query.includes("@gmail")) {
-      // Tìm chính xác email
-      users = await User.find({ email: query });
+      // Tìm trong danh sách bạn bè theo email chính xác
+      users = await User.find({
+        _id: { $in: friendIds },
+        email: query,
+      });
     } else {
-      // Tìm gần đúng fullName, case-insensitive
-      users = await User.find({ fullName: { $regex: query, $options: "i" } });
+      // Tìm gần đúng trong danh sách bạn bè theo fullName
+      users = await User.find({
+        _id: { $in: friendIds },
+        fullName: { $regex: query, $options: "i" },
+      });
     }
 
     res.status(200).json(users);
@@ -58,6 +73,7 @@ export async function searchUsers(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
+
 
 export async function sendFriendRequest(req, res) {
   try {

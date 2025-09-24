@@ -102,7 +102,7 @@ export default function UserChatPage() {
   );
 
   const handleCreateGroup = useCallback(
-    async (memberIds, groupName) => {
+async (memberIds, groupName) => {
       if (!client) return;
       const myId = client.userID;
       if (!myId) return;

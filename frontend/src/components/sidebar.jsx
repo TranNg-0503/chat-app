@@ -40,8 +40,8 @@ export default function Sidebar() {
         </NavLink>
 
         {/* onboard*/}
-        <NavLink to="/onboard" className={linkClass}>
-          <Pencil size={18} /> Sửa onboard
+        <NavLink to="/chat-ai" className={linkClass}>
+          <Pencil size={18} /> Chat với AI
         </NavLink>
 
         <button
