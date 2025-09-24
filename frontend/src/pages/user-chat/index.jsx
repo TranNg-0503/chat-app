@@ -1,10 +1,4 @@
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  useContext,
-} from "react";
+import React, { useEffect, useMemo, useState, useCallback, useContext } from "react";
 import { StreamChat } from "stream-chat";
 import {
   Chat,
@@ -35,20 +29,16 @@ export default function UserChatPage() {
   const [currentUser, setCurrentUser] = useState(null);
 
   const chatColorTheme = useMemo(
-    () =>
-      theme === THEMES.Night ? "str-chat__theme-dark" : "str-chat__theme-light",
+    () => (theme === THEMES.Night ? "str-chat__theme-dark" : "str-chat__theme-light"),
     [theme]
   );
 
-  // Lấy user hiện tại
   useEffect(() => {
     let isCancelled = false;
 
     async function bootstrap() {
       try {
         if (isCancelled) return;
-
-        // Lấy stream token cho user hiện tại
         const tokenRes = await api.get(`${CHAT_BASE}/token`, {
           credentials: "include",
         });
@@ -59,13 +49,12 @@ export default function UserChatPage() {
           throw new Error("Thiếu VITE_STREAM_API_KEY ở frontend (.env).");
         }
 
-        //Kết nối Stream client
         const sc = StreamChat.getInstance(STREAM_API_KEY);
         await sc.connectUser(
           {
             id: String(user._id),
             name: user.fullName || `user_${user._id}`,
-            image: user.profilePic, // optional
+            image: user.profilePic,
           },
           token
         );
@@ -73,7 +62,7 @@ export default function UserChatPage() {
         if (isCancelled) return;
         setCurrentUser({
           id: String(user._id),
-          name: user.name || `user_${user._id}`,
+          name: user.fullName || `user_${user._id}`,
         });
         setClient(sc);
       } catch (e) {
@@ -89,7 +78,6 @@ export default function UserChatPage() {
     };
   }, [user]);
 
-  //Cấu hình filter/sort cho ChannelList (liệt kê các kênh mà user là member)
   const filters = useMemo(() => {
     if (!currentUser) return {};
     return {
@@ -101,61 +89,49 @@ export default function UserChatPage() {
   const sort = useMemo(() => ({ last_message_at: -1 }), []);
   const options = useMemo(() => ({ limit: 20 }), []);
 
-  //Tạo kênh nhanh bằng userId
   const handleCreateDM = useCallback(
     async (otherUserId) => {
       if (!client) return;
-
       const myId = client.userID;
-      if (!myId) {
-        console.error("Không tìm thấy userID của client");
-        return;
-      }
-
+      if (!myId) return;
       const members = [myId, String(otherUserId)];
       const channel = client.channel("messaging", { members });
-
-      // chỉ cần watch, sẽ tự tạo nếu chưa có
       await channel.watch();
     },
     [client]
   );
 
-  // Tạo nhóm chat
   const handleCreateGroup = useCallback(
-    async (memberIds, groupName) => {
+async (memberIds, groupName) => {
       if (!client) return;
-
       const myId = client.userID;
       if (!myId) return;
-
-      const finalMembers = Array.from(
-        new Set([...memberIds.map(String), myId])
-      );
-
+      const finalMembers = Array.from(new Set([...memberIds.map(String), myId]));
       const channel = client.channel("messaging", null, {
         name: groupName || undefined,
         members: finalMembers,
       });
-
       await channel.create();
       await channel.watch();
     },
     [client]
   );
 
-  //Cleanup khi unmount
+  const handleStartCall = () => {
+    if (!channel?.id) return;
+    window.open(
+      `/call/${channel.id}`,
+      "_blank",
+      "width=1200,height=800,noopener,noreferrer"
+    );
+  };
+
+
   useEffect(() => {
     return () => {
       if (client) client.disconnectUser();
     };
   }, [client]);
-
-  // Placeholder for call
-  const handleStartCall = (channel) => {
-    console.log("Start video call with channel", channel?.id);
-    // Later integrate @stream-io/video-react-sdk here
-  };
 
   if (isConnecting) {
     return (
@@ -188,7 +164,6 @@ export default function UserChatPage() {
           <div className="flex-1 max-w-80 min-w-56">
             <ChannelList filters={filters} sort={sort} options={options} />
           </div>
-
           <div className="flex-[3]">
             <Channel>
               <Window>
