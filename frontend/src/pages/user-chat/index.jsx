@@ -195,7 +195,7 @@ export default function UserChatPage() {
           {/* Cột giữa + phải: đặt trong <Channel> để có context */}
           <div className="flex-[3] min-w-0">
             <Channel>
-              <div className="flex h-full">
+              <div className="flex h-full w-full">
                 {/* Khung chat */}
                 <div className="flex-1 min-w-0 h-full pr-200">
                   <Window>
