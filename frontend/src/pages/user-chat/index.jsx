@@ -22,6 +22,7 @@ import { ThemeContext } from "../../components/providers/ThemeProvider";
 import { THEMES } from "../../../theme.config";
 import QuickDM from "./components/QuickDM";
 import { UserContext } from "../../components/providers/AuthProvider";
+import ChannelInfoSidebar from "./components/ChannelInfoSidebar";
 
 const CHAT_BASE = "/chat";
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
@@ -184,19 +185,32 @@ export default function UserChatPage() {
           onCreateDM={handleCreateDM}
           onCreateGroup={handleCreateGroup}
         />
+
         <div className="flex flex-1 overflow-hidden">
+          {/* Cột trái: danh sách kênh */}
           <div className="flex-1 max-w-80 min-w-56">
             <ChannelList filters={filters} sort={sort} options={options} />
           </div>
 
-          <div className="flex-[3]">
+          {/* Cột giữa + phải: đặt trong <Channel> để có context */}
+          <div className="flex-[3] min-w-0">
             <Channel>
-              <Window>
-                <ChannelHeaderWithCall onStartCall={handleStartCall} />
-                <MessageList />
-                <MessageInput focus />
-              </Window>
-              <Thread />
+              <div className="flex h-full">
+                {/* Khung chat */}
+                <div className="flex-1 min-w-0 h-full pr-200">
+                  <Window>
+                    <ChannelHeaderWithCall onStartCall={handleStartCall} />
+                    <MessageList />
+                    <MessageInput focus />
+                  </Window>
+                  <Thread />
+                </div>
+
+                {/* Cột phải: thông tin hội thoại (PHẢI ở trong <Channel>) */}
+                <div className="w-80">
+                  <ChannelInfoSidebar />
+                </div>
+              </div>
             </Channel>
           </div>
         </div>
