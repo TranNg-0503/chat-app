@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useState, useCallback, useContext } from "react";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useContext,
+} from "react";
 import { StreamChat } from "stream-chat";
 import {
   Chat,
@@ -17,6 +23,8 @@ import { THEMES } from "../../../theme.config";
 import QuickDM from "./components/QuickDM";
 import { UserContext } from "../../components/providers/AuthProvider";
 import CustomMessage from "./components/CustomMessage";
+import ChannelInfoSidebar from "./components/ChannelInfoSidebar";
+
 const CHAT_BASE = "/chat";
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -29,7 +37,8 @@ export default function UserChatPage() {
   const [currentUser, setCurrentUser] = useState(null);
 
   const chatColorTheme = useMemo(
-    () => (theme === THEMES.Night ? "str-chat__theme-dark" : "str-chat__theme-light"),
+    () =>
+      theme === THEMES.Night ? "str-chat__theme-dark" : "str-chat__theme-light",
     [theme]
   );
 
@@ -102,11 +111,13 @@ export default function UserChatPage() {
   );
 
   const handleCreateGroup = useCallback(
-async (memberIds, groupName) => {
+    async (memberIds, groupName) => {
       if (!client) return;
       const myId = client.userID;
       if (!myId) return;
-      const finalMembers = Array.from(new Set([...memberIds.map(String), myId]));
+      const finalMembers = Array.from(
+        new Set([...memberIds.map(String), myId])
+      );
       const channel = client.channel("messaging", null, {
         name: groupName || undefined,
         members: finalMembers,
@@ -125,7 +136,6 @@ async (memberIds, groupName) => {
       "width=1200,height=800,noopener,noreferrer"
     );
   };
-
 
   useEffect(() => {
     return () => {
@@ -160,18 +170,32 @@ async (memberIds, groupName) => {
           onCreateDM={handleCreateDM}
           onCreateGroup={handleCreateGroup}
         />
+
         <div className="flex flex-1 overflow-hidden">
+          {/* Cột trái: danh sách kênh */}
           <div className="flex-1 max-w-80 min-w-56">
             <ChannelList filters={filters} sort={sort} options={options} />
           </div>
-          <div className="flex-[3]">
+
+          {/* Cột giữa + phải: đặt trong <Channel> để có context */}
+          <div className="flex-[3] min-w-0">
             <Channel>
-              <Window>
-                <ChannelHeaderWithCall onStartCall={handleStartCall} />
-                <MessageList Message={CustomMessage} />
-                <MessageInput focus />
-              </Window>
-              <Thread />
+              <div className="flex h-full">
+                {/* Khung chat */}
+                <div className="flex-1 min-w-0 h-full pr-200">
+                  <Window>
+                    <ChannelHeaderWithCall onStartCall={handleStartCall} />
+                    <MessageList Message={CustomMessage} />
+                    <MessageInput focus />
+                  </Window>
+                  <Thread />
+                </div>
+
+                {/* Cột phải: thông tin hội thoại (PHẢI ở trong <Channel>) */}
+                <div className="w-80">
+                  <ChannelInfoSidebar />
+                </div>
+              </div>
             </Channel>
           </div>
         </div>
