@@ -8,6 +8,7 @@ import UserChatPage from "./pages/user-chat";
 import ThemeProvider from "./components/providers/ThemeProvider";
 import ProtectedLayout from "./components/layouts/ProtecedLayout";
 import AuthProvider from "./components/providers/AuthProvider";
+import AIChatPage from "./pages/ai-chat";
 
 export default function App() {
   return (
@@ -41,12 +42,22 @@ export default function App() {
                 </ProtectedLayout>
               }
             />
+            
 
             <Route
               path="/chat-user"
               element={
                 <ProtectedLayout>
                   <UserChatPage />
+                </ProtectedLayout>
+              }
+            />
+
+            <Route
+              path="/chat-ai"
+              element={
+                <ProtectedLayout>
+                  <AIChatPage />
                 </ProtectedLayout>
               }
             />
