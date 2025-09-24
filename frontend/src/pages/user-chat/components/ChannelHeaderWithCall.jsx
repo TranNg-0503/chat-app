@@ -6,13 +6,14 @@ import {
 } from "stream-chat-react";
 import EditGroupChatModal from "./EditGroupChatModal";
 import { UserContext } from "../../../components/providers/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
-function ChannelHeaderWithCall({ onStartCall }) {
-  // still forward the rest of the default header props via composition
+function ChannelHeaderWithCall() {
   const { channel } = useChannelStateContext();
   const { setActiveChannel } = useChatContext();
   const [openEditModal, setOpenEditModal] = useState(false);
   const { user } = useContext(UserContext);
+  const navigate = useNavigate();
 
   const isGroup = Object.keys(channel?.state?.members).length > 2;
   const isCreator =
@@ -38,12 +39,17 @@ function ChannelHeaderWithCall({ onStartCall }) {
     try {
       await channel.hide();
       await channel.delete();
-
       setActiveChannel(null);
     } catch (err) {
       console.error("Error deleting channel", err);
     }
   };
+
+const handleStartCall = () => {
+  if (!channel?.id) return;
+  window.open(`/call/${channel.id}`, "_blank");
+};
+
 
   return (
     <div className="relative">
@@ -79,7 +85,7 @@ function ChannelHeaderWithCall({ onStartCall }) {
         <button
           className="btn btn-secondary btn-sm"
           title="Bắt đầu video call"
-          onClick={() => onStartCall(channel)}
+          onClick={handleStartCall}
         >
           Call
         </button>

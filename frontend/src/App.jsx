@@ -7,7 +7,8 @@ import Friend from "./pages/friend";
 import UserChatPage from "./pages/user-chat";
 import ThemeProvider from "./components/providers/ThemeProvider";
 import ProtectedLayout from "./components/layouts/ProtecedLayout";
-
+import CallPage from "./pages/call.jsx";
+import AuthGuard from "./components/layouts/AuthGuard";
 export default function App() {
   return (
     <ThemeProvider>
@@ -31,6 +32,7 @@ export default function App() {
               </ProtectedLayout>
             }
           />
+
           <Route
             path="/friends"
             element={
@@ -49,8 +51,21 @@ export default function App() {
             }
           />
 
+          {/* Thêm route video call */}
+          <Route
+            path="/call/:id"
+            element={
+              <AuthGuard>
+                <CallPage />
+              </AuthGuard>
+            }
+          />
+
+
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+
+          {/* fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
