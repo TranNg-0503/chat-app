@@ -12,7 +12,7 @@ export default function Sidebar() {
 
   const handleSignOut = async () => {
     try {
-      await fetch("/api/auth/logout", {
+      await fetch("http://localhost:5001/logout", {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },

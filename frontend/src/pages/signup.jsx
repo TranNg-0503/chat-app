@@ -41,21 +41,24 @@ export default function Signup() {
 
     try {
       setLoading(true);
-      await api.post("/signup", {
+      const res = await api.post("/signup", {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         password: form.password,
         dateOfBirth: form.dateOfBirth, // YYYY-MM-DD
         sex: form.sex,
       });
-      // cookie JWT đã được set; chuyển sang bước onboard
-      navigate("/onboard", { replace: true });
+
+      // Hiển thị thông báo từ server
+      setErrMsg(res.data.message || "Vui lòng kiểm tra email để xác nhận đăng ký");
+
     } catch (err) {
       const msg = err?.response?.data?.message || "Đăng ký thất bại";
       setErrMsg(msg);
     } finally {
       setLoading(false);
     }
+
   };
 
   return (

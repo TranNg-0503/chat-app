@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import api from "../../api";
 
 const UserContext = createContext({
@@ -10,14 +10,25 @@ const UserContext = createContext({
 });
 
 export default function AuthProvider({ children }) {
+  const location = useLocation(); // lấy path hiện tại
   const [state, setState] = useState({
     loading: true,
     allowed: false,
     user: null,
   });
 
+  // những path không cần auth
+  const publicPaths = ["/login", "/signup"];
+
   useEffect(() => {
     let mounted = true;
+
+    // nếu đang ở public path thì bỏ qua check
+    if (publicPaths.includes(location.pathname)) {
+      setState({ loading: false, allowed: true, user: null });
+      return;
+    }
+
     (async () => {
       try {
         const { data } = await api.get("/me");
@@ -33,8 +44,9 @@ export default function AuthProvider({ children }) {
         if (mounted) setState({ loading: false, allowed: false, user: null });
       }
     })();
+
     return () => (mounted = false);
-  }, []);
+  }, [location.pathname]); // chạy lại khi đổi route
 
   const reloadUserData = async () => {
     try {
@@ -57,7 +69,10 @@ export default function AuthProvider({ children }) {
     );
   }
 
-  if (!state.allowed) return <Navigate to="/login" replace />;
+  // nếu không phải public path và chưa login thì về /login
+  if (!publicPaths.includes(location.pathname) && !state.allowed) {
+    return <Navigate to="/login" replace />;
+  }
 
   return (
     <UserContext.Provider value={{ ...state, reloadUserData }}>
