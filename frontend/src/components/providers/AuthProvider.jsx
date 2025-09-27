@@ -18,7 +18,7 @@ export default function AuthProvider({ children }) {
   });
 
   // những path không cần auth
-  const publicPaths = ["/login", "/signup"];
+  const publicPaths = ["/login", "/signup", "/verify", "/forgot-password", "/reset-password"];
 
   useEffect(() => {
     let mounted = true;

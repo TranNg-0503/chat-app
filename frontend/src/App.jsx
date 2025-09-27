@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/login";
 import Onboard from "./pages/onboard";
+import ForgotPassword from "./pages/forgot-psw";
+import ResetPassword from "./pages/reset-psw";
 import Signup from "./pages/signup";
 import Dashboard from "./pages/dashboard";
 import Friend from "./pages/friend";
@@ -76,6 +78,8 @@ export default function App() {
 
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />

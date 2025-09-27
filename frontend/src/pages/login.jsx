@@ -94,7 +94,7 @@ export default function Login() {
                 </button>
               </div>
               <label className="label">
-                <a className="label-text-alt link link-hover">Quên mật khẩu?</a>
+                <a href="/forgot-password" className="label-text-alt link link-hover">Quên mật khẩu?</a>
               </label>
             </div>
 

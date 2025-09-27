@@ -197,3 +197,73 @@ export async function onboard(req, res) {
     res.status(500).json({ message: "Internal server error" });
   }
 }
+
+
+// ===== Quên mật khẩu =====
+export async function forgotPassword(req, res) {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Vui lòng nhập email" });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "Email không tồn tại" });
+    }
+
+    // tạo token reset
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    user.resetPasswordToken = resetToken;
+    user.resetPasswordExpires = Date.now() + 60 * 60 * 1000; // 1 giờ
+    await user.save();
+
+    const resetLink = `http://localhost:5173/reset-password?token=${resetToken}`;
+
+    await transporter.sendMail({
+      from: process.env.MAIL_USER,
+      to: email,
+      subject: "Đặt lại mật khẩu",
+      html: `<p>Xin chào ${user.fullName},</p>
+             <p>Bạn đã yêu cầu đặt lại mật khẩu. Nhấn vào link sau để tiếp tục:</p>
+             <a href="${resetLink}">${resetLink}</a>
+             <p>Link có hiệu lực trong 1 giờ.</p>`,
+    });
+
+    res.status(200).json({ message: "Đã gửi email đặt lại mật khẩu" });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+}
+
+// ===== Reset mật khẩu =====
+export async function resetPassword(req, res) {
+  try {
+    const { token } = req.query;
+    const { newPassword } = req.body;
+
+    if (!newPassword || newPassword.length < 8) {
+      return res.status(400).json({ message: "Mật khẩu phải ít nhất 8 ký tự" });
+    }
+
+    const user = await User.findOne({
+      resetPasswordToken: token,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: "Token không hợp lệ hoặc đã hết hạn" });
+    }
+
+    user.password = newPassword; // middleware pre-save sẽ hash
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
+    res.status(200).json({ message: "Đặt lại mật khẩu thành công" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ message: "Lỗi máy chủ" });
+  }
+}
