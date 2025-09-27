@@ -16,7 +16,7 @@ import { ThemeContext } from "../../components/providers/ThemeProvider";
 import { THEMES } from "../../../theme.config";
 import QuickDM from "./components/QuickDM";
 import { UserContext } from "../../components/providers/AuthProvider";
-
+import CustomMessage from "./components/CustomMessage";
 const CHAT_BASE = "/chat";
 const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
 
@@ -168,7 +168,7 @@ async (memberIds, groupName) => {
             <Channel>
               <Window>
                 <ChannelHeaderWithCall onStartCall={handleStartCall} />
-                <MessageList />
+                <MessageList Message={CustomMessage} />
                 <MessageInput focus />
               </Window>
               <Thread />

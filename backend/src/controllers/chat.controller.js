@@ -15,7 +15,7 @@ export async function chatWithBot(req, res) {
   try {
     const { message } = req.body;
     const userId = req.user?.id;
-
+    console.log("User ID:", userId);
     if (!userId) {
       return res.status(401).json({ message: "User chưa đăng nhập" });
     }

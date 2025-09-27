@@ -1,5 +1,10 @@
 import jwt, { decode } from "jsonwebtoken";
 import User from "../models/User.js";
+export const authMiddleware = (req, res, next) => {
+  // ở đây bạn có thể verify token hoặc JWT
+  // hiện tại cho pass luôn
+  next();
+};
 
 export const protectRoute = async (req, res, next) => { 
  try{
