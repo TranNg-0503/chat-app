@@ -7,6 +7,7 @@ import Dashboard from "./pages/dashboard";
 import Friend from "./pages/friend";
 import UserChatPage from "./pages/user-chat";
 import ThemeToggler from "./components/ThemeToggler";
+import CloudPage from "./pages/CloudPage";
 
 export default function App() {
   return (
@@ -47,6 +48,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />
+    <Route
+  path="/cloud"
+  element={
+    <ProtectedRoute>
+      <CloudPage />
+    </ProtectedRoute>
+  }
+/>
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Users, MessageSquareText, Pencil, LogOut } from "lucide-react";
+import { Users, MessageSquareText, Pencil, LogOut,Cloud } from "lucide-react";
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -39,6 +39,10 @@ export default function Sidebar() {
         {/* onboard*/}
         <NavLink to="/onboard" className={linkClass}>
           <Pencil size={18} /> Sửa onboard
+        </NavLink>
+
+        <NavLink to="/cloud" className={linkClass}>
+          <Cloud size={18} /> Cloud của tôi
         </NavLink>
 
         <button
