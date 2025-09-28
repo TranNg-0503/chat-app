@@ -163,186 +163,181 @@
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-        <div className="bg-white p-6 rounded-xl shadow-lg w-96 relative">
-            <h2 className="text-lg font-bold mb-4 text-center">Thông tin người dùng</h2>
+return (
+  <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+    <div className="bg-white p-6 rounded-xl shadow-lg w-96 relative">
+      {/* Nút đóng ở góc */}
+      <button
+        onClick={handleClose}
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+      >
+        ✖
+      </button>
 
-            {/* Avatar + Menu */}
-            <div className="flex flex-col items-center mb-4 relative">
-            <img
-                src={preview || user.profilePic || "/default-avatar.png"}
-                alt="Avatar"
-                className="w-24 h-24 rounded-full border mb-2 cursor-pointer hover:opacity-80"
-                onClick={() => setShowAvatarMenu(!showAvatarMenu)}
-            />
-            <span className="font-semibold">{user.fullName}</span>
+      <h2 className="text-lg font-bold mb-4 text-center">Thông tin người dùng</h2>
 
-            {showAvatarMenu && (
-                <div className="absolute top-28 bg-white border rounded-lg shadow-md w-40">
-                <button
-                    className="w-full px-4 py-2 text-left hover:bg-gray-100"
-                    onClick={() => {
-                    window.open(user.profilePic || "/default-avatar.png", "_blank");
-                    setShowAvatarMenu(false);
-                    }}
-                >
-                    👁 Xem ảnh
-                </button>
-                <button
-                    className="w-full px-4 py-2 text-left hover:bg-gray-100"
-                    onClick={() => {
-                    document.getElementById("avatarInput").click();
-                    setShowAvatarMenu(false);
-                    }}
-                >
-                    ✏️ Đổi ảnh đại diện
-                </button>
-                </div>
-            )}
+      {/* Avatar + Menu */}
+      <div className="flex flex-col items-center mb-4 relative">
+        <img
+          src={preview || user.profilePic || "/default-avatar.png"}
+          alt="Avatar"
+          className="w-24 h-24 rounded-full border mb-2 cursor-pointer hover:opacity-80"
+          onClick={() => setShowAvatarMenu(!showAvatarMenu)}
+        />
+        <span className="font-semibold">{user.fullName}</span>
 
-            <input
-                id="avatarInput"
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileChange}
-            />
-            </div>
-
-            {/* Nội dung modal */}
-            {!isChangingPassword ? (
-            <div className="text-sm space-y-2 mb-4">
-                {isEditing ? (
-                <>
-                    <label className="block text-sm font-medium mb-1">Họ tên</label>
-                    <input
-                    type="text"
-                    name="fullName"
-                    value={editData.fullName}
-                    onChange={handleChange}
-                    className="input input-bordered w-full mb-3"
-                    />
-
-                    <label className="block text-sm font-medium mb-1">Profile</label>
-                    <input
-                    type="text"
-                    name="profile"
-                    value={editData.profile}
-                    onChange={handleChange}
-                    className="input input-bordered w-full mb-3"
-                    />
-
-                    <label className="block text-sm font-medium mb-1">Địa chỉ</label>
-                    <input
-                    type="text"
-                    name="location"
-                    value={editData.location}
-                    onChange={handleChange}
-                    className="input input-bordered w-full"
-                    />
-                </>
-                ) : (
-                <>
-                    <p><span className="font-medium">Họ tên:</span> {user.fullName}</p>
-                    <p><span className="font-medium">Profile:</span> {user.profile || "Chưa có"}</p>
-                    <p><span className="font-medium">Địa chỉ:</span> {user.location || "Chưa có"}</p>
-                    <p><span className="font-medium">Email:</span> {user.email}</p>
-                </>
-                )}
-            </div>
-            ) : (
-            <div className="space-y-3 mb-4">
-                <label className="block text-sm font-medium">Mật khẩu cũ</label>
-                <input
-                type="password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                className="input input-bordered w-full"
-                />
-
-                <label className="block text-sm font-medium">Mật khẩu mới</label>
-                <input
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="input input-bordered w-full"
-                />
-
-                <label className="block text-sm font-medium">Xác nhận mật khẩu mới</label>
-                <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="input input-bordered w-full"
-                />
-
-                {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
-            </div>
-            )}
-
-            <hr className="my-4" />
-
-            {/* Buttons */}
-            <div className="flex flex-wrap gap-2 justify-between">
+        {showAvatarMenu && (
+          <div className="absolute top-28 bg-white border rounded-lg shadow-md w-40">
             <button
-                className="px-4 py-2 bg-gray-200 rounded"
-                onClick={handleClose}
+              className="w-full px-4 py-2 text-left hover:bg-gray-100"
+              onClick={() => {
+                window.open(user.profilePic || "/default-avatar.png", "_blank");
+                setShowAvatarMenu(false);
+              }}
             >
-                Đóng
+              👁 Xem ảnh
+            </button>
+            <button
+              className="w-full px-4 py-2 text-left hover:bg-gray-100"
+              onClick={() => {
+                document.getElementById("avatarInput").click();
+                setShowAvatarMenu(false);
+              }}
+            >
+              ✏️ Đổi ảnh đại diện
+            </button>
+          </div>
+        )}
+
+        <input
+          id="avatarInput"
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+      </div>
+
+      {/* Nội dung modal */}
+      {!isChangingPassword ? (
+        <div className="text-sm space-y-2 mb-4">
+          {isEditing ? (
+            <>
+              <label className="block text-sm font-medium mb-1">Họ tên</label>
+              <input
+                type="text"
+                name="fullName"
+                value={editData.fullName}
+                onChange={handleChange}
+                className="input input-bordered w-full mb-3"
+              />
+
+              <label className="block text-sm font-medium mb-1">Profile</label>
+              <input
+                type="text"
+                name="profile"
+                value={editData.profile}
+                onChange={handleChange}
+                className="input input-bordered w-full mb-3"
+              />
+
+              <label className="block text-sm font-medium mb-1">Địa chỉ</label>
+              <input
+                type="text"
+                name="location"
+                value={editData.location}
+                onChange={handleChange}
+                className="input input-bordered w-full"
+              />
+            </>
+          ) : (
+            <>
+              <p><span className="font-medium">Họ tên:</span> {user.fullName}</p>
+              <p><span className="font-medium">Profile:</span> {user.profile || "Chưa có"}</p>
+              <p><span className="font-medium">Địa chỉ:</span> {user.location || "Chưa có"}</p>
+              <p><span className="font-medium">Email:</span> {user.email}</p>
+            </>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-3 mb-4">
+          <label className="block text-sm font-medium">Mật khẩu cũ</label>
+          <input
+            type="password"
+            value={oldPassword}
+            onChange={(e) => setOldPassword(e.target.value)}
+            className="input input-bordered w-full"
+          />
+
+          <label className="block text-sm font-medium">Mật khẩu mới</label>
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            className="input input-bordered w-full"
+          />
+
+          <label className="block text-sm font-medium">Xác nhận mật khẩu mới</label>
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            className="input input-bordered w-full"
+          />
+
+          {passwordError && <p className="text-red-500 text-sm">{passwordError}</p>}
+        </div>
+      )}
+
+      <hr className="my-4" />
+
+      {/* Buttons */}
+      <div className="flex flex-wrap gap-2 justify-end">
+        {!isChangingPassword ? (
+          <>
+            {!isEditing ? (
+              <button
+                className="px-4 py-2 bg-green-600 text-white rounded"
+                onClick={() => setIsEditing(true)}
+              >
+                Chỉnh sửa
+              </button>
+            ) : (
+              <button
+                className="px-4 py-2 bg-blue-600 text-white rounded"
+                onClick={handleSaveInfo}
+              >
+                Lưu thông tin
+              </button>
+            )}
+
+            <button
+              className="px-4 py-2 bg-yellow-600 text-white rounded"
+              onClick={() => setIsChangingPassword(true)}
+            >
+              Đổi mật khẩu
             </button>
 
-            {!isChangingPassword ? (
-                <>
-                {!isEditing ? (
-                    <button
-                    className="px-4 py-2 bg-green-600 text-white rounded"
-                    onClick={() => setIsEditing(true)}
-                    >
-                    Chỉnh sửa
-                    </button>
-                ) : (
-                    <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                    onClick={handleSaveInfo}
-                    >
-                    Lưu thông tin
-                    </button>
-                )}
 
-                <button
-                    className="px-4 py-2 bg-yellow-600 text-white rounded"
-                    onClick={() => setIsChangingPassword(true)}
-                >
-                    Đổi mật khẩu
-                </button>
-
-                <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                    onClick={handleUpload}
-                    disabled={!selectedFile}
-                >
-                    Lưu Avatar
-                </button>
-                </>
-            ) : (
-                <>
-                <button
-                    className="px-4 py-2 bg-gray-400 text-white rounded"
-                    onClick={() => setIsChangingPassword(false)}
-                >
-                    Hủy
-                </button>
-                <button
-                    className="px-4 py-2 bg-blue-600 text-white rounded"
-                    onClick={handleChangePassword}
-                >
-                    Lưu mật khẩu
-                </button>
-                </>
-            )}
-            </div>
-        </div>
-        </div>
-    );
-    }
+          </>
+        ) : (
+          <>
+            <button
+              className="px-4 py-2 bg-gray-400 text-white rounded"
+              onClick={() => setIsChangingPassword(false)}
+            >
+              Hủy
+            </button>
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded"
+              onClick={handleChangePassword}
+            >
+              Lưu mật khẩu
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  </div>
+);
+}
