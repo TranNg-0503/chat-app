@@ -1,14 +1,13 @@
 // -----------------------------------
 // CallPage.jsx
 // -----------------------------------
-import React, { useEffect, useState, useContext } from "react";
+import React, { useEffect, useState, useContext, useRef } from "react";
 import { useParams } from "react-router-dom";
 import {
   StreamVideoClient,
   StreamVideo,
   StreamCall,
   StreamTheme,
-  SpeakerLayout,
   CallControls,
   useCallStateHooks,
   CallingState,
@@ -22,37 +21,33 @@ const CustomLayout = () => {
   const { useParticipants } = useCallStateHooks();
   const participants = useParticipants();
 
-  // Giữ tất cả participants, bao gồm cả localParticipant
   const uniqueParticipants = Array.from(
     new Map(participants.map((p) => [p.userId, p])).values()
   );
 
   return (
-    <div className="h-full w-full flex items-center justify-center bg-black" style={{ boxSizing: 'border-box' }}>
+    <div className="h-full w-full flex items-center justify-center bg-black">
       {uniqueParticipants.length === 0 ? (
         <p className="text-white text-lg">Chưa có ai trong phòng</p>
       ) : uniqueParticipants.length === 1 ? (
-        // Single participant: scale to fit viewport while maintaining aspect ratio
         <div className="flex items-center justify-center w-full h-full max-w-[80vw] max-h-[80vh]">
-          <div className="w-full h-full" style={{ aspectRatio: '16/9' }}>
+          <div className="w-full h-full" style={{ aspectRatio: "16/9" }}>
             <ParticipantView participant={uniqueParticipants[0]} />
           </div>
         </div>
       ) : (
-        // Multiple participants: use CSS grid to fit all participants
         <div
           className="w-full h-full grid gap-2 p-2"
           style={{
             gridTemplateColumns: `repeat(auto-fit, minmax(200px, 1fr))`,
-            gridAutoRows: 'minmax(150px, 1fr)',
-            boxSizing: 'border-box',
+            gridAutoRows: "minmax(150px, 1fr)",
           }}
         >
           {uniqueParticipants.map((p) => (
             <div
               key={p.sessionId}
               className="w-full h-full flex items-center justify-center"
-              style={{ aspectRatio: '16/9' }}
+              style={{ aspectRatio: "16/9" }}
             >
               <ParticipantView participant={p} />
             </div>
@@ -75,7 +70,6 @@ export default function CallPage() {
 
     const initCall = async () => {
       if (!user?._id || !callId) return;
-
       try {
         const res = await axios.post("http://localhost:5001/call/token", {
           userId: user._id,
@@ -126,7 +120,7 @@ export default function CallPage() {
   return (
     <StreamVideo client={client}>
       <StreamCall call={call}>
-        <CallContent call={call} callId={callId} userId={user?._id} />
+        <CallContent call={call} userId={user?._id} />
       </StreamCall>
     </StreamVideo>
   );
@@ -135,35 +129,71 @@ export default function CallPage() {
 // -----------------------------------
 // Component CallContent
 // -----------------------------------
-const CallContent = ({ call, callId, userId }) => {
-  const { useCallCallingState, useMicrophoneState, useCameraState } = useCallStateHooks();
+const CallContent = ({ call, userId }) => {
+  const { useCallCallingState, useParticipants } = useCallStateHooks();
+  const participants = useParticipants();
   const callingState = useCallCallingState();
-  const { microphone } = useMicrophoneState();
-  const { camera } = useCameraState();
 
-  useEffect(() => {
-    console.log("Mic state:", microphone.enabled, "Mic track:", microphone.track);
-    console.log("Camera state:", camera.enabled, "Camera track:", camera.track);
-  }, [microphone.enabled, microphone.track, camera.enabled, camera.track]);
+  const idleTimerRef = useRef(null);
+  const prevCountRef = useRef(participants.length);
 
-  // Khi đã rời call từ SDK thì đóng tab luôn
+  // Nếu call đã LEFT -> đóng cửa sổ
   useEffect(() => {
     if (callingState === CallingState.LEFT) {
       window.close();
     }
   }, [callingState]);
 
+  // Auto-end nếu sau 10s không có remote participant
+  useEffect(() => {
+    const localId = String(userId);
+    const remoteCount = participants.filter(
+      (p) => String(p.userId) !== localId
+    ).length;
+
+    if (remoteCount === 0) {
+      if (!idleTimerRef.current) {
+        idleTimerRef.current = setTimeout(() => {
+          try {
+            if (call?.endCall) call.endCall();
+            else if (call?.leave) call.leave();
+          } catch (e) {
+            console.error("Error ending call:", e);
+          }
+          window.close();
+        }, 10000);
+      }
+    } else {
+      if (idleTimerRef.current) {
+        clearTimeout(idleTimerRef.current);
+        idleTimerRef.current = null;
+      }
+    }
+  }, [participants, call, userId]);
+
+  // Auto-close ngay khi có người rời
+  useEffect(() => {
+    const prev = prevCountRef.current;
+    if (prev > 1 && participants.length < prev) {
+      try {
+        if (call?.endCall) call.endCall();
+        else if (call?.leave) call.leave();
+      } catch (e) {
+        console.error("Error ending call:", e);
+      }
+      window.close();
+    }
+    prevCountRef.current = participants.length;
+  }, [participants, call]);
+
   return (
     <StreamTheme>
       <div className="h-screen w-screen flex flex-col bg-gray-900">
-        {/* Video layout */}
         <div className="flex-1">
           <CustomLayout />
         </div>
-
-        {/* Controls */}
         <div className="p-4 border-t border-gray-700">
-          <CallControls  />
+          <CallControls />
         </div>
       </div>
     </StreamTheme>
