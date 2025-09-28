@@ -129,6 +129,12 @@ export default function CallPage() {
 // -----------------------------------
 // Component CallContent
 // -----------------------------------
+// -----------------------------------
+// Component CallContent
+// -----------------------------------
+// -----------------------------------
+// Component CallContent
+// -----------------------------------
 const CallContent = ({ call, userId }) => {
   const { useCallCallingState, useParticipants } = useCallStateHooks();
   const participants = useParticipants();
@@ -137,14 +143,34 @@ const CallContent = ({ call, userId }) => {
   const idleTimerRef = useRef(null);
   const prevCountRef = useRef(participants.length);
 
-  // Nếu call đã LEFT -> đóng cửa sổ
+  const [showEndPopup, setShowEndPopup] = useState(false);
+  const [countdown, setCountdown] = useState(3); // đếm ngược 3s
+
+  // Hàm hiển thị popup + auto đếm ngược
+  const triggerEndPopup = () => {
+    setShowEndPopup(true);
+    setCountdown(3);
+
+    const interval = setInterval(() => {
+      setCountdown((c) => {
+        if (c <= 1) {
+          clearInterval(interval);
+          window.close();
+          return 0;
+        }
+        return c - 1;
+      });
+    }, 1000);
+  };
+
+  // Nếu call đã LEFT -> hiện popup
   useEffect(() => {
     if (callingState === CallingState.LEFT) {
-      window.close();
+      triggerEndPopup();
     }
   }, [callingState]);
 
-  // Auto-end nếu sau 10s không có remote participant
+  // Auto-end nếu sau 30s không có remote participant
   useEffect(() => {
     const localId = String(userId);
     const remoteCount = participants.filter(
@@ -160,8 +186,8 @@ const CallContent = ({ call, userId }) => {
           } catch (e) {
             console.error("Error ending call:", e);
           }
-          window.close();
-        }, 10000);
+          triggerEndPopup();
+        }, 30000);
       }
     } else {
       if (idleTimerRef.current) {
@@ -181,20 +207,38 @@ const CallContent = ({ call, userId }) => {
       } catch (e) {
         console.error("Error ending call:", e);
       }
-      window.close();
+      triggerEndPopup();
     }
     prevCountRef.current = participants.length;
   }, [participants, call]);
 
   return (
     <StreamTheme>
-      <div className="h-screen w-screen flex flex-col bg-gray-900">
+      <div className="h-screen w-screen flex flex-col bg-gray-900 relative">
         <div className="flex-1">
           <CustomLayout />
         </div>
         <div className="p-4 border-t border-gray-700">
           <CallControls />
         </div>
+
+        {/* Popup thông báo */}
+        {showEndPopup && (
+          <div className="absolute inset-0 bg-black/70 flex items-center justify-center z-50">
+            <div className="bg-white text-gray-900 rounded-xl shadow-lg p-6 max-w-sm text-center">
+              <p className="text-lg font-semibold mb-3">Cuộc gọi đã kết thúc</p>
+              <p className="text-sm text-gray-600">
+                Cửa sổ sẽ tự đóng sau <span className="font-bold">{countdown}</span> giây...
+              </p>
+              <button
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg"
+                onClick={() => window.close()}
+              >
+                Đóng ngay
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </StreamTheme>
   );

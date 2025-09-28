@@ -1,16 +1,15 @@
-import React, { useContext, useState, useEffect } from "react";
+import React, { useContext } from "react";
 import { useMessageContext, useChatContext, MessageSimple } from "stream-chat-react";
 import { UserContext } from "../../../components/providers/AuthProvider";
 import { ThemeContext } from "../../../components/providers/ThemeProvider";
 import { THEMES } from "../../../../theme.config";
 import axios from "axios";
+
 export default function CustomMessage(props) {
   const { message } = useMessageContext();
   const { channel } = useChatContext();
   const { user } = useContext(UserContext);
   const { theme } = useContext(ThemeContext);
-
-  const [actionTaken, setActionTaken] = useState(false);
 
   const isDark = theme === THEMES.Night;
 
@@ -32,8 +31,8 @@ export default function CustomMessage(props) {
       ? "bg-blue-600 text-white border-blue-700"
       : "bg-blue-500 text-white border-blue-300"
     : isDark
-      ? "bg-gray-800 text-gray-100 border-gray-700"
-      : "bg-yellow-50 text-gray-900 border-yellow-200";
+    ? "bg-gray-800 text-gray-100 border-gray-700"
+    : "bg-yellow-50 text-gray-900 border-yellow-200";
 
   const baseBox = `rounded-xl p-3 border shadow-sm max-w-[70%] ${bubbleColor}`;
 
@@ -46,9 +45,13 @@ export default function CustomMessage(props) {
     </button>
   );
 
+  // ====== Tính toán còn hạn 30s không ======
+  const createdAt = new Date(message.created_at).getTime();
+  const now = Date.now();
+  const isExpired = now - createdAt > 30000; // true nếu quá 30s
+
   // ====== Handlers ======
   const handleAccept = async () => {
-    setActionTaken(true);
     await channel.sendMessage({
       text: `✅ ${user?.name || user?.fullName || user?._id} đã tham gia cuộc gọi lúc ${formatTime()}.`,
       attachments: [{ type: "call_accept", callId }],
@@ -57,46 +60,13 @@ export default function CustomMessage(props) {
   };
 
   const handleReject = async () => {
-    setActionTaken(true);
     await channel.sendMessage({
       text: `🚫 ${user?.name || user?.fullName || user?._id} đã từ chối cuộc gọi lúc ${formatTime()}.`,
       attachments: [{ type: "call_reject", callId }],
-      
     });
     await axios.post("http://localhost:5001/call/end", { callId });
   };
 
-  // ====== Auto hide after 30s ======
-  useEffect(() => {
-    if (type === "call_invite" && !actionTaken) {
-      const timer = setTimeout(() => {
-        setActionTaken(true);
-      }, 30000); // 30s
-      return () => clearTimeout(timer);
-    }
-  }, [type, actionTaken]);
-  // useEffect(() => {
-  // if (type === "call_invite" && isSender && !actionTaken) {
-  //   const timer = setTimeout(async () => {
-  //     try {
-  //       // gửi tin nhắn thông báo
-  //       await channel.sendMessage({
-  //         text: `⏱ Cuộc gọi từ ${callerName} đã kết thúc.`,
-  //         attachments: [{ type: "call_cancel", callId }],
-  //       });
-
-  //       // gọi API backend hủy phòng
-  //       await axios.post("http://localhost:5001/call/end", { callId });
-
-  //       setActionTaken(true);
-  //     } catch (err) {
-  //       console.error("Auto cancel call error:", err);
-  //     }
-  //   }, 30000);
-
-  //   return () => clearTimeout(timer);
-  // }
-  // }, [type, isSender, actionTaken, callId, channel, callerName]);
   // ====== Giao diện ======
   if (type === "call_invite") {
     return (
@@ -107,11 +77,14 @@ export default function CustomMessage(props) {
               <p className="mb-2">
                 📞 Cuộc gọi đến từ: <span className="font-semibold">{callerName}</span>
               </p>
-              {!actionTaken && (
+              {!isExpired && (
                 <div className="flex gap-2">
                   {actionBtn("bg-green-500 text-white", "✅ Tham gia", handleAccept)}
                   {actionBtn("bg-red-500 text-white", "❌ Từ chối", handleReject)}
                 </div>
+              )}
+              {isExpired && (
+                <p className="text-sm text-gray-500 italic">(Lời mời gọi đã hết hạn)</p>
               )}
             </>
           ) : (
@@ -125,7 +98,6 @@ export default function CustomMessage(props) {
                     .join(", ")}
                 </span>
               </p>
-              {/* ❌ Bỏ nút hủy, chỉ hiển thị thông báo */}
               <p className="text-sm text-gray-500 italic">
                 (Lời mời gọi sẽ tự hủy sau 30s nếu không phản hồi)
               </p>
