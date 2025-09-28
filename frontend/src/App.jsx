@@ -7,12 +7,15 @@ import Signup from "./pages/signup";
 import Dashboard from "./pages/dashboard";
 import Friend from "./pages/friend";
 import UserChatPage from "./pages/user-chat";
+import ThemeToggler from "./components/ThemeToggler";
+import CloudPage from "./pages/CloudPage";
 import ThemeProvider from "./components/providers/ThemeProvider";
 import ProtectedLayout from "./components/layouts/ProtecedLayout";
 import CallPage from "./pages/call.jsx";
 import AuthGuard from "./components/layouts/AuthGuard";
 import AuthProvider from "./components/providers/AuthProvider";
 import AIChatPage from "./pages/ai-chat";
+
 
 export default function App() {
   return (
@@ -38,7 +41,14 @@ export default function App() {
                 </ProtectedLayout>
               }
             />
-
+    <Route
+  path="/cloud"
+  element={
+    <ProtectedLayout>
+      <CloudPage />
+    </ProtectedLayout>
+  }
+/>
             <Route
               path="/friends"
               element={
@@ -84,6 +94,7 @@ export default function App() {
             {/* fallback */}
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
+        
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>

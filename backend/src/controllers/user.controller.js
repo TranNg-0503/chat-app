@@ -298,6 +298,80 @@ export async function getOutgoingFriendReqs(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
+// avatar
+export const uploadAvatar = async (req, res) => {
+  try {
+    if (!req.file?.path) {
+      return res.status(400).json({ success: false, message: "Không có file nào được upload" });
+    }
+
+    const user = await User.findById(req.user.id);
+    user.profilePic = req.file.path; // Cloudinary trả về URL
+    await user.save();
+
+    // ✅ trả lại toàn bộ user để FE cập nhật
+    res.json({
+      success: true,
+      message: "Upload avatar thành công",
+      user: user,
+    });
+  } catch (error) {
+    console.error("Upload avatar error:", error);
+    res.status(500).json({ success: false, message: "Lỗi server khi upload ảnh" });
+  }
+};
+
+
+
+
+// update 
+export const updateMe = async (req, res) => {
+  try {
+    const { fullName, profile, location } = req.body;
+    const userId = req.user.id; // đồng bộ
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { fullName, profile, location },
+      { new: true }
+    ).select("-password");
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    res.json({ user: updatedUser });
+  } catch (err) {
+    console.error("Update user error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+// đổi pass
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User không tồn tại" });
+    }
+
+    // ✅ So sánh mật khẩu cũ
+    const isMatch = await user.matchPassword(oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Mật khẩu cũ không đúng" });
+    }
+
+    // ✅ Gán mật khẩu mới
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: "Đổi mật khẩu thành công" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+};
 
 export async function findNearbyUsers(req, res) {
   try {

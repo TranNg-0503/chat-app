@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
-import { Users, MessageSquareText, Pencil, LogOut } from "lucide-react";
+import { Users, MessageSquareText, Pencil, LogOut,Cloud } from "lucide-react";
 import ThemeToggler from "./ThemeToggler";
 
 export default function Sidebar() {
@@ -42,6 +42,10 @@ export default function Sidebar() {
         {/* onboard*/}
         <NavLink to="/chat-ai" className={linkClass}>
           <Pencil size={18} /> Chat với AI
+        </NavLink>
+
+        <NavLink to="/cloud" className={linkClass}>
+          <Cloud size={18} /> Cloud của tôi
         </NavLink>
 
         <button

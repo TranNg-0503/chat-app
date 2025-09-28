@@ -73,9 +73,11 @@ export default function AuthProvider({ children }) {
   if (!publicPaths.includes(location.pathname) && !state.allowed) {
     return <Navigate to="/login" replace />;
   }
-
+  const updateUser = (newUser) => {
+    setState((prev) => ({ ...prev, user: newUser }));
+  };
   return (
-    <UserContext.Provider value={{ ...state, reloadUserData }}>
+    <UserContext.Provider value={{ ...state,updateUser, reloadUserData }}>
       {children}
     </UserContext.Provider>
   );
