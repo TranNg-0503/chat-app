@@ -35,6 +35,19 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+
+  // field định vị
+  nowlocation: {
+    type: {
+      type: String,
+      enum: ["Point"],
+      default: "Point"
+    },
+    coordinates: {
+      type: [Number],  // [longitude, latitude]
+      default: [0, 0]
+    }
+  },
   profilePic: {
   type: String,
   default: "",
@@ -71,7 +84,8 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
   const isPasswordCorrect = await bcrypt.compare(enteredPassword, this.password);
   return isPasswordCorrect;
 }
-
+// tạo geospatial index
+userSchema.index({ nowlocation: "2dsphere" });
 const User = mongoose.model("User", userSchema);
 
 export default User;

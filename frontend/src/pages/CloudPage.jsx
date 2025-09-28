@@ -1,16 +1,5 @@
-import Sidebar from "../components/sidebar";
-import Cloud from "./MyCloud"; // chính là file Cloud.jsx bạn viết
+import Cloud from "./MyCloud";
 
 export default function CloudPage() {
-  return (
-    <div className="flex min-h-screen">
-      {/* Sidebar trái */}
-      <Sidebar />
-
-      {/* Cloud bên phải */}
-      <div className="flex-1 overflow-hidden">
-        <Cloud />
-      </div>
-    </div>
-  );
+  return <Cloud />;   // chỉ render nội dung Cloud thôi
 }

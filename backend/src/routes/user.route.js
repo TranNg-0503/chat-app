@@ -16,26 +16,26 @@ import {
   unFriend,
   uploadAvatar,
   updateMe,
+  findNearbyUsers,
 } from "../controllers/user.controller.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
-const router = express.Router();
+const route = express.Router();
 
 // Áp dụng middleware auth cho tất cả route
-router.use(protectRoute);
+route.use(protectRoute);
 
-router.get("/", getRecommendedUsers);
-router.get("/friends", getMyFriends);
-router.get("/search", searchUsers);
+route.get("/", getRecommendedUsers);
+route.get("/friends", getMyFriends);
+route.get("/search", searchUsers);
 
-router.post("/friend-request/:id", sendFriendRequest);
-router.delete("/friend-request/:id", unsendFriendRequest);
-router.put("/friend-request/:id/accept", acceptFriendRequest);
-router.delete("/friend-request/:id/reject", rejectFriendRequest);
-router.delete("/friends/:id", unFriend);
-
-router.get("/friend-request", getFriendRequests);
-router.get("/outgoing-friend-request", getOutgoingFriendReqs);
+route.post("/friend-request/:id", sendFriendRequest);
+route.delete("/friend-request/:id", unsendFriendRequest);
+route.put("/friend-request/:id/accept", acceptFriendRequest);
+route.delete("/friend-request/:id/reject", rejectFriendRequest);
+route.delete("/friends/:id", unFriend);
+route.get("/friend-request", getFriendRequests);
+route.get("/outgoing-friend-request", getOutgoingFriendReqs);
 
 // // Cấu hình multer
 // const upload = multer({ dest: "uploads/" });
@@ -53,10 +53,13 @@ const storage = new CloudinaryStorage({
 
 const upload = multer({ storage });
 // Route upload avatar
-router.post("/me/avatar", upload.single("avatar"), uploadAvatar);
+route.post("/me/avatar", upload.single("avatar"), uploadAvatar);
 
 //update 
-router.put("/me", updateMe);
+route.put("/me", updateMe);
 // đổi pass
-router.put("/me/password", changePassword);
-export default router;
+route.put("/me/password", changePassword);
+route.get("/friend-request", getFriendRequests);
+route.get("/outgoing-friend-request", getOutgoingFriendReqs);
+route.get("/find-nearby-users", findNearbyUsers);
+export default route;

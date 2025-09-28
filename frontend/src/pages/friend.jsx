@@ -18,11 +18,33 @@ export default function Friend() {
   const [searching, setSearching] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
 
+  const [distance, setDistance] = useState(5); // mặc định 5 km
+  const [nearby, setNearby] = useState([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
+  // set các id bạn bè để check nhanh
+  const friendIds = useMemo(() => new Set(friends.map(f => f._id)), [friends]);
+
+
   // ---- helpers
   const requesterIdsPending = useMemo(
     () => new Set(outgoingReqs.map((r) => r.recipient?._id || r.recipient)),
     [outgoingReqs]
   );
+  //người gần đây
+  const fetchNearby = async () => {
+    setNearbyLoading(true);
+    try {
+      const res = await api.get("/users/find-nearby-users", {
+        params: { distance }, // lấy từ state
+        withCredentials: true,
+      });
+      setNearby(res.data || []);
+    } catch (e) {
+      console.error("GET nearby users error:", e);
+    } finally {
+      setNearbyLoading(false);
+    }
+  };
 
   // ---- load data
   const fetchFriends = async () => {
@@ -376,23 +398,77 @@ export default function Friend() {
                         key={u._id}
                         person={u}
                         right={
-                          requesterIdsPending.has(u._id) ? (
+                          friendIds.has(u._id) ? (
+                            <span className="badge badge-success">Bạn bè</span>
+                          ) : requesterIdsPending.has(u._id) ? (
                             <span className="badge">Đã gửi</span>
                           ) : (
                             <button
                               className="btn btn-sm btn-primary"
                               onClick={() => sendRequest(u._id)}
                             >
-                              Gửi lời mời
+                              Kết bạn
                             </button>
                           )
                         }
                       />
                     ))}
                   </ul>
+
                 )}
               </div>
             )}
+
+             {/* Nearby users */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold">Người gần bạn</h3>
+                <input
+                  type="number"
+                  min={1}
+                  className="input input-bordered w-24"
+                  value={distance}
+                  onChange={(e) => setDistance(e.target.value)}
+                />
+                <button className="btn btn-sm btn-primary" onClick={fetchNearby}>
+                  Tìm
+                </button>
+                <span className="text-sm opacity-70">km</span>
+              </div>
+
+              {nearbyLoading ? (
+                <div className="flex items-center gap-2 opacity-80">
+                  <Loader2 className="animate-spin" size={18} /> Đang tải...
+                </div>
+              ) : nearby.length === 0 ? (
+                <p>Không có ai gần bạn trong phạm vi này.</p>
+              ) : (
+                <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {nearby.map((u) => (
+                  <PersonItem
+                    key={u._id}
+                    person={u}
+                    right={
+                      friendIds.has(u._id) ? (
+                        <span className="badge badge-success">Bạn bè</span>
+                      ) : requesterIdsPending.has(u._id) ? (
+                        <span className="badge">Đã gửi</span>
+                      ) : (
+                        <button
+                          className="btn btn-sm btn-primary"
+                          onClick={() => sendRequest(u._id)}
+                        >
+                          Kết bạn
+                        </button>
+                      )
+                    }
+                  />
+                ))}
+              </ul>
+
+              )}
+            </div>
+
 
             {/* Recommended */}
             <div className="space-y-3">
