@@ -2,6 +2,7 @@ import express from "express";
 import { CloudinaryStorage } from "multer-storage-cloudinary";
 import cloudinary from "../lib/cloudinary.js";
 import multer from "multer";
+import { changePassword } from "../controllers/user.controller.js";
 import {
   getMyFriends,
   getRecommendedUsers,
@@ -53,6 +54,9 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 // Route upload avatar
 router.post("/me/avatar", upload.single("avatar"), uploadAvatar);
+
 //update 
 router.put("/me", updateMe);
+// đổi pass
+router.put("/me/password", changePassword);
 export default router;

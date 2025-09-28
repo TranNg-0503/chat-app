@@ -15,7 +15,7 @@ export async function chatWithBot(req, res) {
   try {
     const { message } = req.body;
     const userId = req.user?.id;
-
+    console.log("User ID:", userId);
     if (!userId) {
       return res.status(401).json({ message: "User chưa đăng nhập" });
     }
@@ -32,7 +32,7 @@ export async function chatWithBot(req, res) {
       createdAt: { $gte: startOfDay, $lte: endOfDay },
     });
 
-    if (chatCount >= 2) {
+    if (chatCount >= 20) {
       return res.status(429).json({ message: "Bạn đã đạt giới hạn 20 lần chat hôm nay" });
     }
 
@@ -67,9 +67,40 @@ export async function chatWithBot(req, res) {
     const chat = new Chat({ userId, userMessage: message, botReply: reply });
     await chat.save();
 
+    // lấy tin nhắn gần nhất
+   /* const chats = await Chat.find({ userId }).sort({ createdAt: 1 });
+
+    // format về frontend
+    const history = chats.flatMap((c) => [
+      { role: "user", content: c.userMessage },
+      { role: "bot", content: c.botReply },
+    ]);*/
+
+
+    //res.json({ reply, history });
     res.json({ reply });
   } catch (err) {
     console.error("Lỗi gọi Groq API:", err);
     res.status(500).json({ message: "Server error" });
   }
 }
+
+export async function getChatHistory(req, res) {
+  try {
+    const userId = req.user?.id;
+    if (!userId) return res.status(401).json({ message: "User chưa đăng nhập" });
+
+    const chats = await Chat.find({ userId }).sort({ createdAt: 1 }).limit(50);
+
+    const history = chats.flatMap((c) => [
+      { role: "user", content: c.userMessage },
+      { role: "bot", content: c.botReply },
+    ]);
+
+    res.json({ history });
+  } catch (err) {
+    console.error("Lỗi getChatHistory:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+}
+

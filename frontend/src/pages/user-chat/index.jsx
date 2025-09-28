@@ -1,0 +1,181 @@
+import React, { useEffect, useMemo, useState, useCallback, useContext } from "react";
+import { StreamChat } from "stream-chat";
+import {
+  Chat,
+  Channel,
+  ChannelList,
+  MessageInput,
+  MessageList,
+  Thread,
+  Window,
+  LoadingIndicator,
+} from "stream-chat-react";
+import ChannelHeaderWithCall from "./components/ChannelHeaderWithCall";
+import api from "../../api";
+import { ThemeContext } from "../../components/providers/ThemeProvider";
+import { THEMES } from "../../../theme.config";
+import QuickDM from "./components/QuickDM";
+import { UserContext } from "../../components/providers/AuthProvider";
+import CustomMessage from "./components/CustomMessage";
+const CHAT_BASE = "/chat";
+const STREAM_API_KEY = import.meta.env.VITE_STREAM_API_KEY;
+
+export default function UserChatPage() {
+  const { theme } = useContext(ThemeContext);
+  const { user } = useContext(UserContext);
+  const [client, setClient] = useState(null);
+  const [isConnecting, setIsConnecting] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  const chatColorTheme = useMemo(
+    () => (theme === THEMES.Night ? "str-chat__theme-dark" : "str-chat__theme-light"),
+    [theme]
+  );
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function bootstrap() {
+      try {
+        if (isCancelled) return;
+        const tokenRes = await api.get(`${CHAT_BASE}/token`, {
+          credentials: "include",
+        });
+        const token = tokenRes.data?.token;
+        if (isCancelled) return;
+
+        if (!STREAM_API_KEY) {
+          throw new Error("Thiếu VITE_STREAM_API_KEY ở frontend (.env).");
+        }
+
+        const sc = StreamChat.getInstance(STREAM_API_KEY);
+        await sc.connectUser(
+          {
+            id: String(user._id),
+            name: user.fullName || `user_${user._id}`,
+            image: user.profilePic,
+          },
+          token
+        );
+
+        if (isCancelled) return;
+        setCurrentUser({
+          id: String(user._id),
+          name: user.fullName || `user_${user._id}`,
+        });
+        setClient(sc);
+      } catch (e) {
+        setError(e.message || "Có lỗi khi khởi tạo chat.");
+      } finally {
+        if (!isCancelled) setIsConnecting(false);
+      }
+    }
+
+    bootstrap();
+    return () => {
+      isCancelled = true;
+    };
+  }, [user]);
+
+  const filters = useMemo(() => {
+    if (!currentUser) return {};
+    return {
+      type: { $in: ["messaging"] },
+      members: { $in: [currentUser.id] },
+    };
+  }, [currentUser]);
+
+  const sort = useMemo(() => ({ last_message_at: -1 }), []);
+  const options = useMemo(() => ({ limit: 20 }), []);
+
+  const handleCreateDM = useCallback(
+    async (otherUserId) => {
+      if (!client) return;
+      const myId = client.userID;
+      if (!myId) return;
+      const members = [myId, String(otherUserId)];
+      const channel = client.channel("messaging", { members });
+      await channel.watch();
+    },
+    [client]
+  );
+
+  const handleCreateGroup = useCallback(
+async (memberIds, groupName) => {
+      if (!client) return;
+      const myId = client.userID;
+      if (!myId) return;
+      const finalMembers = Array.from(new Set([...memberIds.map(String), myId]));
+      const channel = client.channel("messaging", null, {
+        name: groupName || undefined,
+        members: finalMembers,
+      });
+      await channel.create();
+      await channel.watch();
+    },
+    [client]
+  );
+
+  const handleStartCall = () => {
+    if (!channel?.id) return;
+    window.open(
+      `/call/${channel.id}`,
+      "_blank",
+      "width=1200,height=800,noopener,noreferrer"
+    );
+  };
+
+
+  useEffect(() => {
+    return () => {
+      if (client) client.disconnectUser();
+    };
+  }, [client]);
+
+  if (isConnecting) {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <LoadingIndicator />
+        <span className="ml-2 text-sm">Đang kết nối chat…</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="m-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        {error}
+      </div>
+    );
+  }
+
+  if (!client) return null;
+
+  return (
+    <div className="flex-1 flex flex-col min-h-0">
+      <Chat client={client} theme={chatColorTheme}>
+        <QuickDM
+          className="flex-none"
+          onCreateDM={handleCreateDM}
+          onCreateGroup={handleCreateGroup}
+        />
+        <div className="flex flex-1 overflow-hidden">
+          <div className="flex-1 max-w-80 min-w-56">
+            <ChannelList filters={filters} sort={sort} options={options} />
+          </div>
+          <div className="flex-[3]">
+            <Channel>
+              <Window>
+                <ChannelHeaderWithCall onStartCall={handleStartCall} />
+                <MessageList Message={CustomMessage} />
+                <MessageInput focus />
+              </Window>
+              <Thread />
+            </Channel>
+          </div>
+        </div>
+      </Chat>
+    </div>
+  );
+}

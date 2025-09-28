@@ -37,19 +37,34 @@ export async function getMyFriends(req, res) {
 
 export async function searchUsers(req, res) {
   try {
-    const { query } = req.query; // Lấy input từ query param, vd: /search?query=...
+    const { query } = req.query; // /search?query=...
+    const userId = req.user._id; // id của user đang đăng nhập
     let users = [];
 
     if (!query) {
       return res.status(400).json({ message: "Vui lòng nhập query" });
     }
 
+    // Lấy danh sách bạn bè của user hiện tại
+    const currentUser = await User.findById(userId).select("friends");
+    if (!currentUser) {
+      return res.status(404).json({ message: "Không tìm thấy user" });
+    }
+
+    const friendIds = currentUser.friends; // giả sử trường "friends" là array các ObjectId
+
     if (query.includes("@gmail")) {
-      // Tìm chính xác email
-      users = await User.find({ email: query });
+      // Tìm trong danh sách bạn bè theo email chính xác
+      users = await User.find({
+        _id: { $in: friendIds },
+        email: query,
+      });
     } else {
-      // Tìm gần đúng fullName, case-insensitive
-      users = await User.find({ fullName: { $regex: query, $options: "i" } });
+      // Tìm gần đúng trong danh sách bạn bè theo fullName
+      users = await User.find({
+        _id: { $in: friendIds },
+        fullName: { $regex: query, $options: "i" },
+      });
     }
 
     res.status(200).json(users);
@@ -58,6 +73,7 @@ export async function searchUsers(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
+
 
 export async function sendFriendRequest(req, res) {
   try {
@@ -285,25 +301,29 @@ export async function getOutgoingFriendReqs(req, res) {
 // avatar
 export const uploadAvatar = async (req, res) => {
   try {
-    if (!req.file || !req.file.path) {
-      return res.status(400).json({ error: "Chưa có file tải lên" });
+    if (!req.file?.path) {
+      return res.status(400).json({ success: false, message: "Không có file nào được upload" });
     }
 
-    // Cloudinary trả về link sẵn trong req.file.path
-    const avatarUrl = req.file.path;
+    const user = await User.findById(req.user.id);
+    user.profilePic = req.file.path; // Cloudinary trả về URL
+    await user.save();
 
-    const user = await User.findByIdAndUpdate(
-      req.user.id,
-      { profilePic: avatarUrl },
-      { new: true }
-    );
-
-    res.json({ profilePic: user.profilePic });
-  } catch (err) {
-    console.error("Upload avatar error:", err);
-    res.status(500).json({ error: "Lỗi server khi upload" });
+    // ✅ trả lại toàn bộ user để FE cập nhật
+    res.json({
+      success: true,
+      message: "Upload avatar thành công",
+      user: user,
+    });
+  } catch (error) {
+    console.error("Upload avatar error:", error);
+    res.status(500).json({ success: false, message: "Lỗi server khi upload ảnh" });
   }
 };
+
+
+
+
 // update 
 export const updateMe = async (req, res) => {
   try {
@@ -326,4 +346,29 @@ export const updateMe = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+// đổi pass
+export const changePassword = async (req, res) => {
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user.id);
 
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User không tồn tại" });
+    }
+
+    // ✅ So sánh mật khẩu cũ
+    const isMatch = await user.matchPassword(oldPassword);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Mật khẩu cũ không đúng" });
+    }
+
+    // ✅ Gán mật khẩu mới
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ success: true, message: "Đổi mật khẩu thành công" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ success: false, message: "Lỗi server" });
+  }
+};

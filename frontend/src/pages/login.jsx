@@ -20,12 +20,18 @@ export default function Login() {
     }
     try {
       setLoading(true);
-      await api.post("/login", {
+      const res =await api.post("/login", {
         email: form.email.trim(),
         password: form.password,
       });
       // login ok thì chuyển sang trang cần (dashboard/onboard)
-      navigate("/onboard", { replace: true });
+      const user = res.data.user; 
+      
+      if (user.isOnboarded) {
+        navigate("/", { replace: true });
+      } else {
+        navigate("/onboard", { replace: true });
+      }
     } catch (err) {
       const msg = err?.response?.data?.message || "Đăng nhập thất bại";
       setErrMsg(msg);
@@ -88,7 +94,7 @@ export default function Login() {
                 </button>
               </div>
               <label className="label">
-                <a className="label-text-alt link link-hover">Quên mật khẩu?</a>
+                <a href="/forgot-password" className="label-text-alt link link-hover">Quên mật khẩu?</a>
               </label>
             </div>
 
