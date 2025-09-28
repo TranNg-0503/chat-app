@@ -298,3 +298,53 @@ export async function getOutgoingFriendReqs(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
+
+export async function findNearbyUsers(req, res) {
+  try {
+    const userId = req.user._id;
+    const { distance } = req.query; // km
+
+    if (!distance) {
+      return res.status(400).json({ message: "Thiếu khoảng cách (km)" });
+    }
+
+    const currentUser = await User.findById(userId).select("nowlocation");
+    if (!currentUser || !currentUser.nowlocation) {
+      return res.status(404).json({ message: "Không tìm thấy vị trí của bạn" });
+    }
+
+    const maxDistance = parseFloat(distance) * 1000; // km -> m
+
+    const nearbyUsers = await User.aggregate([
+      {
+        $geoNear: {
+          near: {
+            type: "Point",
+            coordinates: currentUser.nowlocation.coordinates,
+          },
+          distanceField: "dist.calculated",
+          spherical: true,
+          maxDistance: maxDistance,
+          query: {
+            _id: { $ne: currentUser._id }, // loại chính mình
+          },
+        },
+      },
+      {
+        $project: {
+          fullName: 1,
+          profilePic: 1,
+          sex: 1,
+          location: 1,
+          "dist.calculated": 1,
+        },
+      },
+    ]);
+
+    res.status(200).json(nearbyUsers);
+  } catch (error) {
+    console.error("Lỗi trong findNearbyUsers controller:", error.message);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+}
+

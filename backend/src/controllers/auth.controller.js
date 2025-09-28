@@ -114,7 +114,7 @@ export async function verifyEmail(req, res) {
 
 export async function login(req, res) {
   try {
-    const { email, password } = req.body;
+    const { email, password, longitude, latitude } = req.body;
     if (!email || !password) {
       return res.status(400).json({ message: "Vui lòng điền đầy đủ thông tin" });
     }
@@ -127,6 +127,15 @@ export async function login(req, res) {
 
     const isPasswordCorrect = await user.matchPassword(password);
     if (!isPasswordCorrect) return res.status(401).json({ message: "Sai email hoặc mật khẩu" });
+
+    // 👉 Nếu client có gửi tọa độ thì cập nhật
+    if (longitude !== undefined && latitude !== undefined) {
+      user.nowlocation = {
+        type: "Point",
+        coordinates: [longitude, latitude],
+      };
+      await user.save();
+    }
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET_KEY, {
       expiresIn: "7d",

@@ -11,6 +11,7 @@ import {
   rejectFriendRequest,
   unsendFriendRequest,
   unFriend,
+  findNearbyUsers,
 } from "../controllers/user.controller.js";
 const route = express.Router();
 
@@ -29,4 +30,5 @@ route.delete("/friends/:id", unFriend);
 
 route.get("/friend-request", getFriendRequests);
 route.get("/outgoing-friend-request", getOutgoingFriendReqs);
+route.get("/find-nearby-users", findNearbyUsers);
 export default route;
