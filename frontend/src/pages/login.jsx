@@ -12,21 +12,26 @@ export default function Login() {
   const onChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const onSubmit = async (e) => {
-    e.preventDefault();
-    setErrMsg("");
-    if (!form.email || !form.password) {
-      setErrMsg("Vui lòng điền đầy đủ thông tin");
-      return;
-    }
+  e.preventDefault();
+  setErrMsg("");
+  if (!form.email || !form.password) {
+    setErrMsg("Vui lòng điền đầy đủ thông tin");
+    return;
+  }
+
+  setLoading(true);
+
+  // Hàm gọi API login
+  const doLogin = async (extra = {}) => {
     try {
-      setLoading(true);
-      const res =await api.post("/login", {
+      const res = await api.post("/login", {
         email: form.email.trim(),
         password: form.password,
+        ...extra, // nếu có tọa độ thì gửi kèm
       });
-      // login ok thì chuyển sang trang cần (dashboard/onboard)
-      const user = res.data.user; 
-      
+
+      const user = res.data.user;
+
       if (user.isOnboarded) {
         navigate("/", { replace: true });
       } else {
@@ -39,6 +44,25 @@ export default function Login() {
       setLoading(false);
     }
   };
+
+  // 👉 thử lấy vị trí
+  if (navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        doLogin({ latitude, longitude });
+      },
+      (err) => {
+        console.warn("Không lấy được vị trí:", err.message);
+        doLogin(); // fallback login không kèm tọa độ
+      }
+    );
+  } else {
+    console.warn("Trình duyệt không hỗ trợ geolocation");
+    doLogin(); // fallback luôn
+  }
+};
+
 
   return (
     <div className="min-h-screen hero bg-base-200">
