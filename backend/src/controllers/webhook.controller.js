@@ -40,7 +40,20 @@ export const streamWebhook = async (req, res) => {
         console.log("✅ Saved normal message:", msg.text);
       }
     }
-
+    if (event.type === "message.deleted") {
+      const { message } = event;
+      // Xóa tin nhắn thường
+      await Message.deleteOne({ messageId: message.id });
+      
+    }
+    if (event.type === "message.updated") {
+      const { message } = event;
+      await Message.updateOne(
+        { messageId: message.id },
+        { text: message.text }
+      );
+      console.log("✏️ Updated message:", message.id);
+    }
     res.status(200).send("ok");
   } catch (err) {
     console.error("❌ Webhook error:", err);
