@@ -7,6 +7,7 @@ import {
   getMyFriends,
   getRecommendedUsers,
   searchUsers,
+  searchUsersForAdd,
   sendFriendRequest,
   acceptFriendRequest,
   getOutgoingFriendReqs,
@@ -28,6 +29,7 @@ route.use(protectRoute);
 route.get("/", getRecommendedUsers);
 route.get("/friends", getMyFriends);
 route.get("/search", searchUsers);
+route.get("/search-add", searchUsersForAdd);
 
 route.post("/friend-request/:id", sendFriendRequest);
 route.delete("/friend-request/:id", unsendFriendRequest);
@@ -46,7 +48,7 @@ route.get("/outgoing-friend-request", getOutgoingFriendReqs);
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "avatars",       // lưu vào folder "avatars" trên Cloudinary
+    folder: "avatars", // lưu vào folder "avatars" trên Cloudinary
     allowed_formats: ["jpg", "png", "jpeg"],
   },
 });
@@ -55,7 +57,7 @@ const upload = multer({ storage });
 // Route upload avatar
 route.post("/me/avatar", upload.single("avatar"), uploadAvatar);
 
-//update 
+//update
 route.put("/me", updateMe);
 // đổi pass
 route.put("/me/password", changePassword);
