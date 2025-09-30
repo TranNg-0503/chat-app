@@ -14,10 +14,8 @@ export default function CustomMessage(props) {
   const { user } = useContext(UserContext);
   const { theme } = useContext(ThemeContext);
 
-  const [isHandled, setIsHandled] = useState(false);
-  const audioRef = useRef(null); // ref cho audio
-
-  const isDark = theme === THEMES.Night;
+  const [handleStatus, setHandleStatus] = useState(null); // "accepted" | "rejected" | "cancelled"
+  const audioRef = useRef(null);
 
   if (!message?.attachments?.length) {
     return <MessageSimple {...props} />;
@@ -28,9 +26,7 @@ export default function CustomMessage(props) {
   const isSender = String(message.user?.id) === String(user?._id);
   const callerName = message.user?.name || message.user?.fullName || message.user?.id;
 
-  const formatTime = () =>
-    new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-
+  const isDark = theme === THEMES.Night;
   const alignClass = isSender ? "justify-end text-right" : "justify-start text-left";
   const bubbleColor = isSender
     ? isDark
@@ -42,6 +38,9 @@ export default function CustomMessage(props) {
 
   const baseBox = `rounded-xl p-3 border shadow-sm max-w-[70%] ${bubbleColor}`;
 
+  const formatTime = () =>
+    new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+
   const actionBtn = (color, label, onClick) => (
     <button
       onClick={onClick}
@@ -51,7 +50,7 @@ export default function CustomMessage(props) {
     </button>
   );
 
-  // ====== Tính toán còn hạn 30s không ======
+  // ====== Kiểm tra hết hạn 30s ======
   const createdAt = new Date(message.created_at).getTime();
   const now = Date.now();
   const isExpired = now - createdAt > 30000;
@@ -65,7 +64,7 @@ export default function CustomMessage(props) {
   };
 
   const handleAccept = async () => {
-    setIsHandled(true);
+    setHandleStatus("accepted");
     stopRing();
     await channel.sendMessage({
       text: `✅ ${user?.name || user?.fullName || user?._id} đã tham gia cuộc gọi lúc ${formatTime()}.`,
@@ -75,26 +74,37 @@ export default function CustomMessage(props) {
   };
 
   const handleReject = async () => {
-    setIsHandled(true);
+    setHandleStatus("rejected");
     stopRing();
     await channel.sendMessage({
       text: `🚫 ${user?.name || user?.fullName || user?._id} đã từ chối cuộc gọi lúc ${formatTime()}.`,
       attachments: [{ type: "call_reject", callId }],
     });
-    await axios.post("http://localhost:5001/call/end", { callId });
+
+    // Nếu chỉ có 2 người thì end call luôn
+    const memberCount = Object.keys(channel.state.members).length;
+    if (memberCount <= 2) {
+      await axios.post("http://localhost:5001/call/end", { callId });
+    }
   };
 
   // ====== Auto play chuông khi có call_invite ======
   useEffect(() => {
-    if (type === "call_invite" && !isSender && !isExpired && !isHandled) {
-      if (audioRef.current) {
-        audioRef.current.play().catch(() => {
-          console.warn("Không auto play được (trình duyệt chặn).");
-        });
-      }
+    if (type === "call_invite" && !isSender && !isExpired && !handleStatus) {
+      audioRef.current?.play().catch(() => {
+        console.warn("Không auto play được (trình duyệt chặn).");
+      });
     }
     return () => stopRing();
-  }, [type, isSender, isExpired, isHandled]);
+  }, [type, isSender, isExpired, handleStatus]);
+
+  // ====== Nếu nhận call_cancel thì update UI ======
+  useEffect(() => {
+    if (type === "call_cancel") {
+      setHandleStatus("cancelled");
+      stopRing();
+    }
+  }, [type]);
 
   // ====== Giao diện ======
   if (type === "call_invite") {
@@ -107,22 +117,27 @@ export default function CustomMessage(props) {
                 📞 Cuộc gọi đến từ: <span className="font-semibold">{callerName}</span>
               </p>
 
-              {!isExpired && !isHandled && (
+              {!isExpired && !handleStatus && (
                 <div className="flex flex-col gap-2">
                   {/* 🔔 Audio chuông */}
                   <audio ref={audioRef} src={ring} loop />
                   <div className="flex gap-2">
-                    {actionBtn("bg-green-200 text-white", "✅ Tham gia", handleAccept)}
-                    {actionBtn("bg-red-200 text-white", "❌ Từ chối", handleReject)}
+                    {actionBtn("bg-green-500 text-white", "✅ Tham gia", handleAccept)}
+                    {actionBtn("bg-red-500 text-white", "❌ Từ chối", handleReject)}
                   </div>
                 </div>
               )}
 
-              {isHandled && (
+              {handleStatus === "rejected" && (
                 <p className="text-sm text-red-400 italic">Bạn đã từ chối cuộc gọi</p>
               )}
-
-              {!isHandled && isExpired && (
+              {handleStatus === "accepted" && (
+                <p className="text-sm text-green-400 italic">Bạn đã tham gia cuộc gọi</p>
+              )}
+              {handleStatus === "cancelled" && (
+                <p className="text-sm text-gray-400 italic">📴 Cuộc gọi đã kết thúc</p>
+              )}
+              {!handleStatus && isExpired && (
                 <p className="text-sm text-gray-400 italic">(Lời mời gọi đã hết hạn)</p>
               )}
             </>
@@ -171,7 +186,7 @@ export default function CustomMessage(props) {
     return (
       <div className={`flex ${alignClass} my-2`}>
         <div className={`${baseBox} text-gray-600 dark:text-gray-400 italic`}>
-          {message.text}
+          {message.text || "📴 Cuộc gọi đã kết thúc"}
         </div>
       </div>
     );
