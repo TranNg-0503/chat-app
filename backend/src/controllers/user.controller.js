@@ -1,4 +1,5 @@
 import FriendRequest from "../models/FriendRequest.js";
+import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 
 export async function getRecommendedUsers(req, res) {
@@ -360,6 +361,15 @@ export const changePassword = async (req, res) => {
     const isMatch = await user.matchPassword(oldPassword);
     if (!isMatch) {
       return res.status(400).json({ success: false, message: "Mật khẩu cũ không đúng" });
+    }
+
+    // ✅ Check mật khẩu mới không được trùng mật khẩu hiện tại
+    const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsCurrent) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu mới không được trùng với mật khẩu hiện tại",
+      });
     }
 
     // ✅ Gán mật khẩu mới
