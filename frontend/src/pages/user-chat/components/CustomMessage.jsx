@@ -14,8 +14,11 @@ export default function CustomMessage(props) {
   const { user } = useContext(UserContext);
   const { theme } = useContext(ThemeContext);
 
-  const [handleStatus, setHandleStatus] = useState(null); // "accepted" | "rejected" | "cancelled"
+  const [handleStatus, setHandleStatus] = useState(null); // null | "accepted" | "rejected"
   const audioRef = useRef(null);
+  const memberCount = Object.keys(channel.state.members).length;
+
+  const isDark = theme === THEMES.Night;
 
   if (!message?.attachments?.length) {
     return <MessageSimple {...props} />;
@@ -26,7 +29,9 @@ export default function CustomMessage(props) {
   const isSender = String(message.user?.id) === String(user?._id);
   const callerName = message.user?.name || message.user?.fullName || message.user?.id;
 
-  const isDark = theme === THEMES.Night;
+  const formatTime = () =>
+    new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+
   const alignClass = isSender ? "justify-end text-right" : "justify-start text-left";
   const bubbleColor = isSender
     ? isDark
@@ -38,9 +43,6 @@ export default function CustomMessage(props) {
 
   const baseBox = `rounded-xl p-3 border shadow-sm max-w-[70%] ${bubbleColor}`;
 
-  const formatTime = () =>
-    new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
-
   const actionBtn = (color, label, onClick) => (
     <button
       onClick={onClick}
@@ -50,7 +52,7 @@ export default function CustomMessage(props) {
     </button>
   );
 
-  // ====== Kiểm tra hết hạn 30s ======
+  // ====== Tính toán còn hạn 30s không ======
   const createdAt = new Date(message.created_at).getTime();
   const now = Date.now();
   const isExpired = now - createdAt > 30000;
@@ -81,30 +83,25 @@ export default function CustomMessage(props) {
       attachments: [{ type: "call_reject", callId }],
     });
 
-    // Nếu chỉ có 2 người thì end call luôn
+    // Chỉ end call nếu trong phòng có đúng 2 người (caller + bạn)
     const memberCount = Object.keys(channel.state.members).length;
     if (memberCount <= 2) {
       await axios.post("http://localhost:5001/call/end", { callId });
     }
   };
 
+
   // ====== Auto play chuông khi có call_invite ======
   useEffect(() => {
     if (type === "call_invite" && !isSender && !isExpired && !handleStatus) {
-      audioRef.current?.play().catch(() => {
-        console.warn("Không auto play được (trình duyệt chặn).");
-      });
+      if (audioRef.current) {
+        audioRef.current.play().catch(() => {
+          console.warn("Không auto play được (trình duyệt chặn).");
+        });
+      }
     }
     return () => stopRing();
   }, [type, isSender, isExpired, handleStatus]);
-
-  // ====== Nếu nhận call_cancel thì update UI ======
-  useEffect(() => {
-    if (type === "call_cancel") {
-      setHandleStatus("cancelled");
-      stopRing();
-    }
-  }, [type]);
 
   // ====== Giao diện ======
   if (type === "call_invite") {
@@ -131,12 +128,11 @@ export default function CustomMessage(props) {
               {handleStatus === "rejected" && (
                 <p className="text-sm text-red-400 italic">Bạn đã từ chối cuộc gọi</p>
               )}
+
               {handleStatus === "accepted" && (
                 <p className="text-sm text-green-400 italic">Bạn đã tham gia cuộc gọi</p>
               )}
-              {handleStatus === "cancelled" && (
-                <p className="text-sm text-gray-400 italic">📴 Cuộc gọi đã kết thúc</p>
-              )}
+
               {!handleStatus && isExpired && (
                 <p className="text-sm text-gray-400 italic">(Lời mời gọi đã hết hạn)</p>
               )}
@@ -186,7 +182,7 @@ export default function CustomMessage(props) {
     return (
       <div className={`flex ${alignClass} my-2`}>
         <div className={`${baseBox} text-gray-600 dark:text-gray-400 italic`}>
-          {message.text || "📴 Cuộc gọi đã kết thúc"}
+          {message.text}
         </div>
       </div>
     );

@@ -139,27 +139,17 @@ const CallContent = ({ call, userId }) => {
   const { useCallCallingState, useParticipants } = useCallStateHooks();
   const participants = useParticipants();
   const callingState = useCallCallingState();
-  const { channel } = useChatContext();
+
   const idleTimerRef = useRef(null);
   const prevCountRef = useRef(participants.length);
 
   const [showEndPopup, setShowEndPopup] = useState(false);
   const [countdown, setCountdown] = useState(3); // đếm ngược 3s
-  const sendCancelMessage = async () => {
-  try {
-    await channel.sendMessage({
-      text: "📴 Cuộc gọi đã kết thúc.",
-      attachments: [{ type: "call_cancel", callId: call.id }],
-    });
-  } catch (e) {
-    console.error("Error sending cancel message:", e);
-  }
-};
 
-// Hàm hiển thị popup + auto đếm ngược
-const triggerEndPopup = () => {
-  setShowEndPopup(true);
-  setCountdown(3);
+  // Hàm hiển thị popup + auto đếm ngược
+  const triggerEndPopup = () => {
+    setShowEndPopup(true);
+    setCountdown(3);
 
     const interval = setInterval(() => {
       setCountdown((c) => {
@@ -176,7 +166,6 @@ const triggerEndPopup = () => {
   // Nếu call đã LEFT -> hiện popup
   useEffect(() => {
     if (callingState === CallingState.LEFT) {
-      sendCancelMessage();
       triggerEndPopup();
     }
   }, [callingState]);
@@ -197,7 +186,6 @@ const triggerEndPopup = () => {
           } catch (e) {
             console.error("Error ending call:", e);
           }
-          sendCancelMessage();
           triggerEndPopup();
         }, 30000);
       }
@@ -219,7 +207,6 @@ const triggerEndPopup = () => {
       } catch (e) {
         console.error("Error ending call:", e);
       }
-      sendCancelMessage();
       triggerEndPopup();
     }
     prevCountRef.current = participants.length;
