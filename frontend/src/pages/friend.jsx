@@ -22,8 +22,10 @@ export default function Friend() {
   const [nearby, setNearby] = useState([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   // set các id bạn bè để check nhanh
-  const friendIds = useMemo(() => new Set(friends.map(f => f._id)), [friends]);
-
+  const friendIds = useMemo(
+    () => new Set(friends.map((f) => f._id)),
+    [friends]
+  );
 
   // ---- helpers
   const requesterIdsPending = useMemo(
@@ -175,7 +177,7 @@ export default function Friend() {
       }
       setSearching(true);
       try {
-        const res = await api.get(`/users/search`, {
+        const res = await api.get(`/users/search-add`, {
           params: { query },
           withCredentials: true,
         });
@@ -253,15 +255,18 @@ export default function Friend() {
             ) : (
               <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {friends.map((f) => (
-                  <PersonItem key={f._id} person={f}
-                  right={
-                    <button 
-                      className="btn btn-sm btn-error"
-                      onClick={() => unFriend(f._id)}
-                    >
-                      Hủy kết bạn
-                    </button>
-                  } />
+                  <PersonItem
+                    key={f._id}
+                    person={f}
+                    right={
+                      <button
+                        className="btn btn-sm btn-error"
+                        onClick={() => unFriend(f._id)}
+                      >
+                        Hủy kết bạn
+                      </button>
+                    }
+                  />
                 ))}
               </ul>
             )}
@@ -326,15 +331,17 @@ export default function Friend() {
                       <PersonItem
                         key={req._id}
                         person={req.recipient}
-                        right={<div className="flex items-center gap-2">
-                                <span className="badge">Đang chờ</span>
-                                <button
-                                  onClick={() => unsendRequest(req.recipient._id)}
-                                  className="btn btn-sm btn-error"
-                                >
-                                  Hủy lời mời
-                                </button>
-                              </div>}
+                        right={
+                          <div className="flex items-center gap-2">
+                            <span className="badge">Đang chờ</span>
+                            <button
+                              onClick={() => unsendRequest(req.recipient._id)}
+                              className="btn btn-sm btn-error"
+                            >
+                              Hủy lời mời
+                            </button>
+                          </div>
+                        }
                       />
                     ))}
                   </ul>
@@ -414,12 +421,11 @@ export default function Friend() {
                       />
                     ))}
                   </ul>
-
                 )}
               </div>
             )}
 
-             {/* Nearby users */}
+            {/* Nearby users */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold">Người gần bạn</h3>
@@ -430,7 +436,10 @@ export default function Friend() {
                   value={distance}
                   onChange={(e) => setDistance(e.target.value)}
                 />
-                <button className="btn btn-sm btn-primary" onClick={fetchNearby}>
+                <button
+                  className="btn btn-sm btn-primary"
+                  onClick={fetchNearby}
+                >
                   Tìm
                 </button>
                 <span className="text-sm opacity-70">km</span>
@@ -444,31 +453,29 @@ export default function Friend() {
                 <p>Không có ai gần bạn trong phạm vi này.</p>
               ) : (
                 <ul className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {nearby.map((u) => (
-                  <PersonItem
-                    key={u._id}
-                    person={u}
-                    right={
-                      friendIds.has(u._id) ? (
-                        <span className="badge badge-success">Bạn bè</span>
-                      ) : requesterIdsPending.has(u._id) ? (
-                        <span className="badge">Đã gửi</span>
-                      ) : (
-                        <button
-                          className="btn btn-sm btn-primary"
-                          onClick={() => sendRequest(u._id)}
-                        >
-                          Kết bạn
-                        </button>
-                      )
-                    }
-                  />
-                ))}
-              </ul>
-
+                  {nearby.map((u) => (
+                    <PersonItem
+                      key={u._id}
+                      person={u}
+                      right={
+                        friendIds.has(u._id) ? (
+                          <span className="badge badge-success">Bạn bè</span>
+                        ) : requesterIdsPending.has(u._id) ? (
+                          <span className="badge">Đã gửi</span>
+                        ) : (
+                          <button
+                            className="btn btn-sm btn-primary"
+                            onClick={() => sendRequest(u._id)}
+                          >
+                            Kết bạn
+                          </button>
+                        )
+                      }
+                    />
+                  ))}
+                </ul>
               )}
             </div>
-
 
             {/* Recommended */}
             <div className="space-y-3">

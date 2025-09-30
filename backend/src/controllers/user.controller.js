@@ -1,5 +1,10 @@
 import FriendRequest from "../models/FriendRequest.js";
+import bcrypt from "bcryptjs";
 import User from "../models/User.js";
+
+function escapeRegex(str = "") {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 export async function getRecommendedUsers(req, res) {
   try {
@@ -74,6 +79,51 @@ export async function searchUsers(req, res) {
   }
 }
 
+export async function searchUsersForAdd(req, res) {
+  try {
+    const { query } = req.query;
+    const userId = req.user?._id || req.user?.id; // tùy middleware bạn set
+
+    if (!query || !query.trim()) {
+      return res.status(400).json({ message: "Vui lòng nhập query" });
+    }
+    if (!userId) {
+      return res.status(401).json({ message: "Không xác thực được user" });
+    }
+
+    // Lấy danh sách bạn để loại
+    const me = await User.findById(userId).select("friends");
+    if (!me) return res.status(404).json({ message: "Không tìm thấy user" });
+
+    const safe = escapeRegex(query.trim());
+    const isEmail = query.includes("@");
+
+    const matchCond = isEmail
+      ? { email: { $regex: safe, $options: "i" } }
+      : { fullName: { $regex: safe, $options: "i" } };
+
+    const baseCond = {
+      $and: [
+        matchCond,
+        { _id: { $ne: me._id } }, // loại chính mình
+        { _id: { $nin: me.friends || [] } }, // loại đã là bạn
+      ],
+    };
+
+    const users = await User.find(baseCond)
+      .select("fullName email profilePic location")
+      // Optional: bỏ dấu tiếng Việt khi so sánh (nếu Mongo 4.2+)
+      .collation({ locale: "vi", strength: 1 }) // có thể bỏ nếu DB không hỗ trợ
+      .limit(20);
+
+    return res.status(200).json(users);
+  } catch (err) {
+    console.error("searchUsersForAdd error:", err);
+    return res
+      .status(500)
+      .json({ message: "Lỗi server", detail: err?.message });
+  }
+}
 
 export async function sendFriendRequest(req, res) {
   try {
@@ -176,7 +226,9 @@ export async function unFriend(req, res) {
     // Kiểm tra xem có phải bạn bè không
     const me = await User.findById(myId);
     if (!me.friends.includes(friendId)) {
-      return res.status(400).json({ message: "Người này không phải bạn bè của bạn" });
+      return res
+        .status(400)
+        .json({ message: "Người này không phải bạn bè của bạn" });
     }
 
     // Xoá bạn bè khỏi cả 2 user
@@ -202,10 +254,6 @@ export async function unFriend(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
-
-
-
-
 
 export async function acceptFriendRequest(req, res) {
   try {
@@ -255,7 +303,7 @@ export async function rejectFriendRequest(req, res) {
         .json({ message: "bạn không có quyền từ chối yêu cầu" });
     }
 
-     // Xóa lời mời kết bạn
+    // Xóa lời mời kết bạn
     await FriendRequest.findByIdAndDelete(requestId);
 
     res.status(200).json({ message: "Đã từ chối và xóa lời mời kết bạn" });
@@ -264,8 +312,6 @@ export async function rejectFriendRequest(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
-
-
 
 export async function getFriendRequests(req, res) {
   try {
@@ -302,7 +348,9 @@ export async function getOutgoingFriendReqs(req, res) {
 export const uploadAvatar = async (req, res) => {
   try {
     if (!req.file?.path) {
-      return res.status(400).json({ success: false, message: "Không có file nào được upload" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Không có file nào được upload" });
     }
 
     const user = await User.findById(req.user.id);
@@ -317,14 +365,13 @@ export const uploadAvatar = async (req, res) => {
     });
   } catch (error) {
     console.error("Upload avatar error:", error);
-    res.status(500).json({ success: false, message: "Lỗi server khi upload ảnh" });
+    res
+      .status(500)
+      .json({ success: false, message: "Lỗi server khi upload ảnh" });
   }
 };
 
-
-
-
-// update 
+// update
 export const updateMe = async (req, res) => {
   try {
     const { fullName, profile, location } = req.body;
@@ -353,13 +400,26 @@ export const changePassword = async (req, res) => {
     const user = await User.findById(req.user.id);
 
     if (!user) {
-      return res.status(404).json({ success: false, message: "User không tồn tại" });
+      return res
+        .status(404)
+        .json({ success: false, message: "User không tồn tại" });
     }
 
     // ✅ So sánh mật khẩu cũ
     const isMatch = await user.matchPassword(oldPassword);
     if (!isMatch) {
-      return res.status(400).json({ success: false, message: "Mật khẩu cũ không đúng" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Mật khẩu cũ không đúng" });
+    }
+
+    // ✅ Check mật khẩu mới không được trùng mật khẩu hiện tại
+    const isSameAsCurrent = await bcrypt.compare(newPassword, user.password);
+    if (isSameAsCurrent) {
+      return res.status(400).json({
+        success: false,
+        message: "Mật khẩu mới không được trùng với mật khẩu hiện tại",
+      });
     }
 
     // ✅ Gán mật khẩu mới
@@ -421,4 +481,3 @@ export async function findNearbyUsers(req, res) {
     res.status(500).json({ message: "Lỗi server" });
   }
 }
-
