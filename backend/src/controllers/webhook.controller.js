@@ -1,4 +1,5 @@
 import Message from "../models/Message.js";
+import CallMessage from "../models/Call.js";
 
 export const streamWebhook = async (req, res) => {
   try {
@@ -7,18 +8,52 @@ export const streamWebhook = async (req, res) => {
     console.log("📩 Webhook event:", event.type);
 
     if (event.type === "message.new") {
-      const msg = new Message({
-        messageId: event.message.id,
-        userId: event.message.user.id,
-        text: event.message.text,
-        channelId: event.channel?.id,
-        createdAt: new Date(event.message.created_at),
-      });
+      const { message } = event;
 
-      await msg.save();
-      console.log("✅ Saved message:", msg.text);
+      // Kiểm tra có call attachment không
+      const callAttachment = message.attachments?.find(att =>
+        ["call_invite","call_accept","call_reject","call_cancel"].includes(att.type)
+      );
+
+      if (callAttachment) {
+        // Lưu vào collection CallMessage
+        const callMsg = new CallMessage({
+          callId: callAttachment.callId,
+          userId: message.user.id,
+          type: callAttachment.type,
+          text: message.text,
+          channelId: event.channel?.id,
+          createdAt: new Date(message.created_at),
+        });
+        await callMsg.save();
+        console.log("✅ Saved call message:", callMsg.text);
+      } else {
+        // Lưu message bình thường
+        const msg = new Message({
+          messageId: message.id,
+          userId: message.user.id,
+          text: message.text,
+          channelId: event.channel?.id,
+          createdAt: new Date(message.created_at),
+        });
+        await msg.save();
+        console.log("✅ Saved normal message:", msg.text);
+      }
     }
-
+    if (event.type === "message.deleted") {
+      const { message } = event;
+      // Xóa tin nhắn thường
+      await Message.deleteOne({ messageId: message.id });
+      
+    }
+    if (event.type === "message.updated") {
+      const { message } = event;
+      await Message.updateOne(
+        { messageId: message.id },
+        { text: message.text }
+      );
+      console.log("✏️ Updated message:", message.id);
+    }
     res.status(200).send("ok");
   } catch (err) {
     console.error("❌ Webhook error:", err);

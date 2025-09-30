@@ -23,5 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 # Environment files
-.env
-frontend/zoola-7ebf2-firebase-adminsdk-fbsvc-a159a8893f.json

@@ -1,13 +1,16 @@
-// models/call.model.js
 import mongoose from "mongoose";
 
-const callSchema = new mongoose.Schema({
-  callId: { type: String, required: true, unique: true },
-  type: { type: String, default: "default" },
-  members: [String],
-  status: { type: String, enum: ["ringing", "active", "ended"], default: "ringing" },
-  startedAt: { type: Date, default: Date.now },
-  endedAt: { type: Date },
+const callMessageSchema = new mongoose.Schema({
+  callId: { type: String, required: true },
+  userId: { type: String, required: true },
+  type: { 
+    type: String, 
+    enum: ["call_invite","call_accept","call_reject","call_cancel"], 
+    required: true 
+  },
+  text: { type: String },
+  channelId: { type: String },
+  createdAt: { type: Date, default: Date.now },
 });
 
-export default mongoose.model("Call", callSchema);
+export default mongoose.model("CallMessage", callMessageSchema);
