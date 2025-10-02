@@ -16,7 +16,7 @@ import {
 import "@stream-io/video-react-sdk/dist/css/styles.css";
 import axios from "axios";
 import { UserContext } from "../components/providers/AuthProvider";
-
+import CallControlsCustom from "./customCallcontrol";
 const CustomLayout = () => {
   const { useParticipants } = useCallStateHooks();
   const participants = useParticipants();
@@ -125,14 +125,6 @@ export default function CallPage() {
     </StreamVideo>
   );
 }
-
-// -----------------------------------
-// Component CallContent
-// -----------------------------------
-// -----------------------------------
-// Component CallContent
-// -----------------------------------
-// -----------------------------------
 // Component CallContent
 // -----------------------------------
 const CallContent = ({ call, userId }) => {
@@ -145,6 +137,31 @@ const CallContent = ({ call, userId }) => {
 
   const [showEndPopup, setShowEndPopup] = useState(false);
   const [countdown, setCountdown] = useState(3); // đếm ngược 3s
+  const handleEndCall = async () => {
+    if (!call) return;
+    try {
+      console.log("👉 Bắt đầu end call:", { callId: call.id, userId });
+
+      const token = localStorage.getItem("token");
+      const channelId = call.cid?.split(":")[1];
+      if (!channelId) throw new Error("Không tìm thấy channelId");
+
+      const res = await axios.post(
+        "http://localhost:5001/call/end",
+        { callId: call.id, channelId, userId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log("✅ API end call response:", res.data);
+
+      triggerEndPopup();
+    } catch (err) {
+      console.error("❌ Lỗi khi end call:", err.response?.data || err.message);
+      triggerEndPopup();
+    }
+  };
+
+
 
   // Hàm hiển thị popup + auto đếm ngược
   const triggerEndPopup = () => {
@@ -211,16 +228,43 @@ const CallContent = ({ call, userId }) => {
     }
     prevCountRef.current = participants.length;
   }, [participants, call]);
+  
+  useEffect(() => {
+      if (!call) return;
+
+      const listener = (event) => {
+        if (event.type === "call_cancel") {
+          console.log("Call đã bị hủy bởi người gọi");
+          setShowEndPopup(true);
+          setCountdown(3);
+          stopRing(); // tắt audio chuông nếu đang rung
+          // Auto đóng sau 3s
+          const interval = setInterval(() => {
+            setCountdown((c) => {
+              if (c <= 1) {
+                clearInterval(interval);
+                window.close();
+                return 0;
+              }
+              return c - 1;
+            });
+          }, 1000);
+        }
+  };
+
+    call.on("event", listener);
+    return () => call.off("event", listener);
+  }, [call]);
 
   return (
     <StreamTheme>
       <div className="h-screen w-screen flex flex-col bg-gray-900 relative">
         <div className="flex-1">
-          <CustomLayout />
-        </div>
-        <div className="p-4 border-t border-gray-700">
-          <CallControls />
-        </div>
+        <CustomLayout />
+          </div>
+          <div className="p-4 border-t border-gray-700 flex justify-center">
+            <CallControlsCustom call={call} onEnd={handleEndCall} />
+          </div>
 
         {/* Popup thông báo */}
         {showEndPopup && (

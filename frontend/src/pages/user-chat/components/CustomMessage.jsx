@@ -4,8 +4,6 @@ import { UserContext } from "../../../components/providers/AuthProvider";
 import { ThemeContext } from "../../../components/providers/ThemeProvider";
 import { THEMES } from "../../../../theme.config";
 import axios from "axios";
-
-// 🔔 import file mp3
 import ring from "./ring.mp3";
 
 export default function CustomMessage(props) {
@@ -14,24 +12,22 @@ export default function CustomMessage(props) {
   const { user } = useContext(UserContext);
   const { theme } = useContext(ThemeContext);
 
-  const [handleStatus, setHandleStatus] = useState(null); // null | "accepted" | "rejected"
+  const [handleStatus, setHandleStatus] = useState(null); 
   const audioRef = useRef(null);
-  const memberCount = Object.keys(channel.state.members).length;
-
-  const isDark = theme === THEMES.Night;
 
   if (!message?.attachments?.length) {
     return <MessageSimple {...props} />;
   }
 
   const attachment = message.attachments[0];
-  const { type, callId } = attachment;
+  const { type, callId } = attachment; // ✅ callId lấy từ attachments
   const isSender = String(message.user?.id) === String(user?._id);
   const callerName = message.user?.name || message.user?.fullName || message.user?.id;
 
   const formatTime = () =>
     new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
 
+  const isDark = theme === THEMES.Night;
   const alignClass = isSender ? "justify-end text-right" : "justify-start text-left";
   const bubbleColor = isSender
     ? isDark
@@ -40,24 +36,21 @@ export default function CustomMessage(props) {
     : isDark
     ? "bg-gray-700 text-gray-50 border-blue-300"
     : "bg-gray-200 text-gray-900 border-gray-200";
-
   const baseBox = `rounded-xl p-3 border shadow-sm max-w-[70%] ${bubbleColor}`;
 
-  const actionBtn = (color, label, onClick) => (
+  const actionBtn = (color, label, onClick, disabled = false) => (
     <button
       onClick={onClick}
-      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${color} hover:opacity-90`}
+      disabled={disabled}
+      className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${color} hover:opacity-90 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
     >
       {label}
     </button>
   );
-
-  // ====== Tính toán còn hạn 30s không ======
   const createdAt = new Date(message.created_at).getTime();
   const now = Date.now();
   const isExpired = now - createdAt > 30000;
 
-  // ====== Handlers ======
   const stopRing = () => {
     if (audioRef.current) {
       audioRef.current.pause();
@@ -78,20 +71,40 @@ export default function CustomMessage(props) {
   const handleReject = async () => {
     setHandleStatus("rejected");
     stopRing();
+
     await channel.sendMessage({
       text: `🚫 ${user?.name || user?.fullName || user?._id} đã từ chối cuộc gọi lúc ${formatTime()}.`,
       attachments: [{ type: "call_reject", callId }],
     });
 
-    // Chỉ end call nếu trong phòng có đúng 2 người (caller + bạn)
     const memberCount = Object.keys(channel.state.members).length;
-    if (memberCount <= 2) {
-      await axios.post("http://localhost:5001/call/end", { callId });
+    if (memberCount <= 2 && callId) {
+      try {
+        const token = localStorage.getItem("token");
+        await axios.post(
+          "http://localhost:5001/call/end",
+          {
+            callId,
+            channelId: channel.id,
+            userId: user._id,
+          },
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+      } catch (err) {
+        console.error("❌ Lỗi khi end call:", err.response?.data || err.message);
+      }
     }
   };
 
+  useEffect(() => {
+    if (type === "call_cancel") {
+      setHandleStatus("canceled");
+      stopRing();
+    }
+  }, [type]);
 
-  // ====== Auto play chuông khi có call_invite ======
   useEffect(() => {
     if (type === "call_invite" && !isSender && !isExpired && !handleStatus) {
       if (audioRef.current) {
@@ -103,7 +116,20 @@ export default function CustomMessage(props) {
     return () => stopRing();
   }, [type, isSender, isExpired, handleStatus]);
 
-  // ====== Giao diện ======
+  // ✅ Ẩn hết nút nếu có tin nhắn mới với attachment type=call_cancel
+  useEffect(() => {
+    const handleNewMessage = (event) => {
+      const newMsg = event.message;
+      if (newMsg?.attachments?.[0]?.type === "call_cancel") {
+        setHandleStatus("canceled");
+        stopRing();
+      }
+    };
+
+    channel.on("message.new", handleNewMessage);
+    return () => channel.off("message.new", handleNewMessage);
+  }, [channel]);
+
   if (type === "call_invite") {
     return (
       <div className={`flex ${alignClass} my-2`}>
@@ -113,26 +139,35 @@ export default function CustomMessage(props) {
               <p className="mb-2">
                 📞 Cuộc gọi đến từ: <span className="font-semibold">{callerName}</span>
               </p>
-
-              {!isExpired && !handleStatus && (
+              {!isExpired && handleStatus !== "canceled" && (
                 <div className="flex flex-col gap-2">
-                  {/* 🔔 Audio chuông */}
                   <audio ref={audioRef} src={ring} loop />
                   <div className="flex gap-2">
-                    {actionBtn("bg-green-500 text-white", "✅ Tham gia", handleAccept)}
-                    {actionBtn("bg-red-500 text-white", "❌ Từ chối", handleReject)}
+                    {actionBtn(
+                      "bg-green-500 text-white",
+                      "✅ Tham gia",
+                      handleAccept,
+                      handleStatus === "rejected"
+                    )}
+                    {actionBtn(
+                      "bg-red-500 text-white",
+                      "❌ Từ chối",
+                      handleReject,
+                      handleStatus === "accepted"
+                    )}
                   </div>
                 </div>
               )}
 
+              {handleStatus === "canceled" && (
+                <p className="text-sm text-gray-400 italic">Người gọi đã kết thúc cuộc gọi</p>
+              )}
               {handleStatus === "rejected" && (
                 <p className="text-sm text-red-400 italic">Bạn đã từ chối cuộc gọi</p>
               )}
-
               {handleStatus === "accepted" && (
                 <p className="text-sm text-green-400 italic">Bạn đã tham gia cuộc gọi</p>
               )}
-
               {!handleStatus && isExpired && (
                 <p className="text-sm text-gray-400 italic">(Lời mời gọi đã hết hạn)</p>
               )}
