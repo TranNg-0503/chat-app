@@ -27,12 +27,12 @@ export default function Sidebar() {
   return (
     <div className="w-64 min-h-screen bg-base-100 shadow-md p-4 flex flex-col">
       <NavLink to="/">
-        <h2 className="text-xl font-bold mb-6">Dashboard</h2>
+        <h2 className="text-3xl font-bold mb-6" >ZOOLAA</h2>
       </NavLink>
 
       <nav className="flex flex-col gap-2">
         <NavLink to="/friends" className={linkClass}>
-          <Users size={18} /> Friend
+          <Users size={18} /> Bạn bè
         </NavLink>
 
         <NavLink to="/chat-user" className={linkClass}>
@@ -52,7 +52,7 @@ export default function Sidebar() {
           onClick={handleSignOut}
           className="flex items-center gap-3 p-3 rounded-lg hover:bg-error/10 text-error hover:text-error font-medium transition"
         >
-          <LogOut size={18} /> Sign out
+          <LogOut size={18} /> Đăng xuất
         </button>
       </nav>
 
