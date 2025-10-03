@@ -24,49 +24,13 @@ router.post("/end", async (req, res) => {
 
     console.log("👉 End call:", { callId, channelId, userId });
 
-    // Lấy danh sách participants từ DB
-    const call = await Call.findOne({ callId });
-    if (!call) return res.status(404).json({ message: "Call not found" });
+    // End video call
+    const call = streamVideoServer.video.call("default", callId);
+    await call.end();
 
-    const participants = call.participants || [];
-
-    // Lấy thông tin user để gửi message
+    // Lấy user từ DB
     const user = await User.findById(userId).lean();
     const displayName = user?.fullName || user?.email || "Người dùng";
-
-    // Nếu còn nhiều hơn 2 người -> chỉ remove user + gửi message "rời cuộc gọi"
-    if (participants.length > 2) {
-      await Call.updateOne({ callId }, { $pull: { participants: userId } });
-
-      // Gửi message call_leave
-      const msg = await streamVideoServer.chat.channel("messaging", channelId).sendMessage({
-        message: {
-          text: `📞 ${displayName} đã rời khỏi cuộc gọi`,
-          user_id: userId,
-          attachments: [{ type: "call_leave", callId }],
-        },
-      });
-
-      // Lưu vào MongoDB
-      const callMsg = new CallMessage({
-        callId,
-        userId,
-        type: "call_leave",
-        text: msg.message.text,
-        channelId,
-        createdAt: new Date(msg.message.created_at),
-      });
-      await callMsg.save();
-
-      return res.json({
-        success: true,
-        message: "Bạn đã rời khỏi cuộc gọi, nhưng phòng vẫn còn người tham gia",
-      });
-    }
-
-    // Nếu <= 2 người -> end call thật sự
-    const videoCall = streamVideoServer.video.call("default", callId);
-    await videoCall.end();
 
     // Gửi message call_cancel
     const msg = await streamVideoServer.chat.channel("messaging", channelId).sendMessage({
@@ -77,7 +41,7 @@ router.post("/end", async (req, res) => {
       },
     });
 
-    // Lưu vào MongoDB
+    // ✅ Lưu vào MongoDB
     const callMsg = new CallMessage({
       callId,
       userId,
@@ -89,13 +53,11 @@ router.post("/end", async (req, res) => {
     await callMsg.save();
 
     res.json({ success: true, message: "Phòng gọi đã bị hủy, message đã lưu" });
-
   } catch (err) {
     console.error("❌ Lỗi end call:", err.response?.data || err.message || err);
     res.status(500).json({ message: "Server error", error: err.message });
   }
 });
-
 
 router.get("/:callId/participants", async (req, res) => {
   const { callId } = req.params;
