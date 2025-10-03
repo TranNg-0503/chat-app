@@ -76,8 +76,7 @@ export default function CustomMessage(props) {
       text: `🚫 ${user?.name || user?.fullName || user?._id} đã từ chối cuộc gọi lúc ${formatTime()}.`,
       attachments: [{ type: "call_reject", callId }],
     });
-
-    const memberCount = Object.keys(channel.state.members).length;
+const memberCount = Object.keys(channel.state.members).length;
     if (memberCount <= 2 && callId) {
       try {
         const token = localStorage.getItem("token");
@@ -166,7 +165,7 @@ export default function CustomMessage(props) {
                 <p className="text-sm text-red-400 italic">Bạn đã từ chối cuộc gọi</p>
               )}
               {handleStatus === "accepted" && (
-                <p className="text-sm text-green-400 italic">Bạn đã tham gia cuộc gọi</p>
+              <p className="text-sm text-green-400 italic">Bạn đã tham gia cuộc gọi</p>
               )}
               {!handleStatus && isExpired && (
                 <p className="text-sm text-gray-400 italic">(Lời mời gọi đã hết hạn)</p>

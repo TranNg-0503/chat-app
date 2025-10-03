@@ -56,11 +56,18 @@ function CreateGroupChatModal({ open, onClose, onCreateGroup }) {
   };
 
   const handleCreateGroup = async () => {
-    if (selectedUsers.length === 0 || !groupName.trim()) return;
+    // Nhóm phải có ít nhất 3 người, bao gồm cả bạn
+    const totalMembers = selectedUsers.length + 1; // +1 là chính user
+    if (totalMembers < 3 || !groupName.trim()) {
+      alert("Nhóm phải có ít nhất 3 thành viên (bao gồm bạn)");
+      return;
+    }
+
     const memberIds = selectedUsers.map((u) => u._id);
     await onCreateGroup(memberIds, groupName.trim());
     handleClose();
   };
+
 
   if (!open) return null;
 
@@ -149,10 +156,11 @@ function CreateGroupChatModal({ open, onClose, onCreateGroup }) {
           <button
             className="btn btn-neutral"
             onClick={handleCreateGroup}
-            disabled={selectedUsers.length === 0 || !groupName.trim()}
+            disabled={selectedUsers.length + 1 < 3 || !groupName.trim()}
           >
             Tạo nhóm
           </button>
+
         </div>
       </div>
       <div className="modal-backdrop" onClick={handleClose} />

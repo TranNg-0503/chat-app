@@ -4,7 +4,7 @@ import streamVideoServer from "../lib/streamVideo.js";
 import User from "../models/User.js";
 // import Call nếu bạn cần cho participants
 // import Call from "../models/Call.js";
-
+import CallMessage from "../models/Call.js"; 
 const router = express.Router();
 
 router.post("/token", getVideoToken);
@@ -28,28 +28,31 @@ router.post("/end", async (req, res) => {
     const call = streamVideoServer.video.call("default", callId);
     await call.end();
 
-    // Gửi tin nhắn vào channel chat
-    const channel = streamVideoServer.chat.channel("messaging", channelId);
-
     // Lấy user từ DB
     const user = await User.findById(userId).lean();
     const displayName = user?.fullName || user?.email || "Người dùng";
 
-    // 🚨 sendMessage của Stream yêu cầu `user_id`, không phải `user: {}`
-    await channel.sendMessage({
+    // Gửi message call_cancel
+    const msg = await streamVideoServer.chat.channel("messaging", channelId).sendMessage({
       message: {
-        text: `📞 ${displayName} đã kết thúc cuộc gọi `,
+        text: `📞 ${displayName} đã kết thúc cuộc gọi`,
         user_id: userId,
-        attachments: [
-          {
-            type: "call_cancel",
-            callId, // để client biết call nào bị hủy
-          },  // Bắt buộc phải có
-        ]
-      }
+        attachments: [{ type: "call_cancel", callId }],
+      },
     });
 
-    res.json({ success: true, message: "Phòng gọi đã bị hủy & tin nhắn đã gửi" });
+    // ✅ Lưu vào MongoDB
+    const callMsg = new CallMessage({
+      callId,
+      userId,
+      type: "call_cancel",
+      text: msg.message.text,
+      channelId,
+      createdAt: new Date(msg.message.created_at),
+    });
+    await callMsg.save();
+
+    res.json({ success: true, message: "Phòng gọi đã bị hủy, message đã lưu" });
   } catch (err) {
     console.error("❌ Lỗi end call:", err.response?.data || err.message || err);
     res.status(500).json({ message: "Server error", error: err.message });

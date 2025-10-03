@@ -8,7 +8,6 @@ import {
   StreamVideo,
   StreamCall,
   StreamTheme,
-  CallControls,
   useCallStateHooks,
   CallingState,
   ParticipantView,
@@ -17,6 +16,7 @@ import "@stream-io/video-react-sdk/dist/css/styles.css";
 import axios from "axios";
 import { UserContext } from "../components/providers/AuthProvider";
 import CallControlsCustom from "./customCallcontrol";
+
 const CustomLayout = () => {
   const { useParticipants } = useCallStateHooks();
   const participants = useParticipants();
@@ -125,6 +125,8 @@ export default function CallPage() {
     </StreamVideo>
   );
 }
+
+// -----------------------------------
 // Component CallContent
 // -----------------------------------
 const CallContent = ({ call, userId }) => {
@@ -132,42 +134,16 @@ const CallContent = ({ call, userId }) => {
   const participants = useParticipants();
   const callingState = useCallCallingState();
 
+  const hasEndedRef = useRef(false); // đảm bảo gọi end call chỉ 1 lần
   const idleTimerRef = useRef(null);
   const prevCountRef = useRef(participants.length);
 
   const [showEndPopup, setShowEndPopup] = useState(false);
-  const [countdown, setCountdown] = useState(3); // đếm ngược 3s
-  const handleEndCall = async () => {
-    if (!call) return;
-    try {
-      console.log("👉 Bắt đầu end call:", { callId: call.id, userId });
+  const [countdown, setCountdown] = useState(3);
 
-      const token = localStorage.getItem("token");
-      const channelId = call.cid?.split(":")[1];
-      if (!channelId) throw new Error("Không tìm thấy channelId");
-
-      const res = await axios.post(
-        "http://localhost:5001/call/end",
-        { callId: call.id, channelId, userId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      console.log("✅ API end call response:", res.data);
-
-      triggerEndPopup();
-    } catch (err) {
-      console.error("❌ Lỗi khi end call:", err.response?.data || err.message);
-      triggerEndPopup();
-    }
-  };
-
-
-
-  // Hàm hiển thị popup + auto đếm ngược
   const triggerEndPopup = () => {
     setShowEndPopup(true);
     setCountdown(3);
-
     const interval = setInterval(() => {
       setCountdown((c) => {
         if (c <= 1) {
@@ -180,91 +156,102 @@ const CallContent = ({ call, userId }) => {
     }, 1000);
   };
 
-  // Nếu call đã LEFT -> hiện popup
+  const safeEndCall = async () => {
+    if (hasEndedRef.current || !call) return;
+    hasEndedRef.current = true;
+
+    try {
+      const token = localStorage.getItem("token");
+      const channelId = call.cid?.split(":")[1];
+
+      await axios.post(
+        "http://localhost:5001/call/end",
+        { callId: call.id, channelId, userId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      console.log("✅ Call ended:", call.id);
+    } catch (err) {
+      console.error("❌ Lỗi khi end call:", err.response?.data || err.message);
+    } finally {
+      triggerEndPopup();
+    }
+  };
+
+  // Nếu call đã LEFT -> trigger popup
   useEffect(() => {
     if (callingState === CallingState.LEFT) {
       triggerEndPopup();
     }
   }, [callingState]);
 
-  // Auto-end nếu sau 30s không có remote participant
+  // Auto-end nếu không có remote participant sau 28s
   useEffect(() => {
     const localId = String(userId);
-    const remoteCount = participants.filter(
-      (p) => String(p.userId) !== localId
-    ).length;
+    const remoteCount = participants.filter(p => String(p.userId) !== localId).length;
 
-    if (remoteCount === 0) {
-      if (!idleTimerRef.current) {
-        idleTimerRef.current = setTimeout(() => {
-          try {
-            if (call?.endCall) call.endCall();
-            else if (call?.leave) call.leave();
-          } catch (e) {
-            console.error("Error ending call:", e);
-          }
-          triggerEndPopup();
-        }, 30000);
-      }
-    } else {
-      if (idleTimerRef.current) {
-        clearTimeout(idleTimerRef.current);
-        idleTimerRef.current = null;
-      }
+    if (remoteCount === 0 && !idleTimerRef.current) {
+      idleTimerRef.current = setTimeout(() => {
+        safeEndCall();
+      }, 28000);
+    } else if (remoteCount > 0 && idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = null;
     }
-  }, [participants, call, userId]);
+  }, [participants]);
 
-  // Auto-close ngay khi có người rời
+  // Auto-close khi số người < 2
   useEffect(() => {
     const prev = prevCountRef.current;
-    if (prev > 1 && participants.length < prev) {
-      try {
-        if (call?.endCall) call.endCall();
-        else if (call?.leave) call.leave();
-      } catch (e) {
-        console.error("Error ending call:", e);
-      }
-      triggerEndPopup();
+    if (participants.length < prev && participants.length < 2) {
+      safeEndCall();
     }
     prevCountRef.current = participants.length;
-  }, [participants, call]);
-  
-  useEffect(() => {
-      if (!call) return;
+  }, [participants]);
 
-      const listener = (event) => {
-        if (event.type === "call_cancel") {
-          console.log("Call đã bị hủy bởi người gọi");
-          setShowEndPopup(true);
-          setCountdown(3);
-          stopRing(); // tắt audio chuông nếu đang rung
-          // Auto đóng sau 3s
-          const interval = setInterval(() => {
-            setCountdown((c) => {
-              if (c <= 1) {
-                clearInterval(interval);
-                window.close();
-                return 0;
-              }
-              return c - 1;
-            });
-          }, 1000);
-        }
-  };
+  // Xử lý event call_cancel từ server
+  useEffect(() => {
+    if (!call) return;
+
+    const listener = (event) => {
+      if (event.type === "call_cancel") {
+        console.log("Call đã bị hủy bởi người gọi");
+        safeEndCall();
+      }
+    };
 
     call.on("event", listener);
     return () => call.off("event", listener);
   }, [call]);
 
+  // Xử lý tắt tab/cửa sổ
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (!call || hasEndedRef.current) return;
+      hasEndedRef.current = true;
+
+      try {
+        const channelId = call.cid?.split(":")[1];
+        const payload = JSON.stringify({ callId: call.id, channelId, userId });
+        navigator.sendBeacon("http://localhost:5001/call/end", new Blob([payload], { type: "application/json" }));
+      } catch (e) {
+        console.error("❌ sendBeacon error:", e);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [call, userId]);
+
   return (
     <StreamTheme>
       <div className="h-screen w-screen flex flex-col bg-gray-900 relative">
         <div className="flex-1">
-        <CustomLayout />
-          </div>
-          <div className="p-4 border-t border-gray-700 flex justify-center">
-            <CallControlsCustom call={call} onEnd={handleEndCall} />
-          </div>
+          <CustomLayout />
+        </div>
+        <div className="p-4 border-t border-gray-700 flex justify-center">
+          <CallControlsCustom call={call} onEnd={safeEndCall} />
+        </div>
 
         {/* Popup thông báo */}
         {showEndPopup && (

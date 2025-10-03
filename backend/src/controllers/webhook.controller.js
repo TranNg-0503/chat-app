@@ -1,96 +1,122 @@
 import Message from "../models/Message.js";
 import CallMessage from "../models/Call.js";
+import Channel from "../models/Channel.js";
+import User from "../models/User.js";
 
 export const streamWebhook = async (req, res) => {
   try {
     const event = req.body;
 
     console.log("📩 Webhook event:", event.type);
+    console.log("🔹 Payload:", JSON.stringify(event, null, 2));
 
+    // ---------------- Messages ----------------
     if (event.type === "message.new") {
-      const { message } = event;
+      const message = event.message;
+      if (!message?.user?.id) throw new Error("Message user ID missing");
 
-      // Kiểm tra có call attachment không
+      // Kiểm tra call attachment
       const callAttachment = message.attachments?.find(att =>
         ["call_invite","call_accept","call_reject","call_cancel"].includes(att.type)
       );
 
       if (callAttachment) {
-        // Lưu vào collection CallMessage
         const callMsg = new CallMessage({
           callId: callAttachment.callId,
           userId: message.user.id,
           type: callAttachment.type,
-          text: message.text,
-          channelId: event.channel?.id,
+          text: message.text || "",
+          channelId: event.channel?.id || "",
           createdAt: new Date(message.created_at),
         });
         await callMsg.save();
         console.log("✅ Saved call message:", callMsg.text);
       } else {
-        // Lưu message bình thường
         const msg = new Message({
           messageId: message.id,
           userId: message.user.id,
-          text: message.text,
-          channelId: event.channel?.id,
+          text: message.text || "",
+          channelId: event.channel?.id || "",
           createdAt: new Date(message.created_at),
         });
         await msg.save();
         console.log("✅ Saved normal message:", msg.text);
       }
     }
+
     if (event.type === "message.deleted") {
-      const { message } = event;
-      // Xóa tin nhắn thường
-      await Message.deleteOne({ messageId: message.id });
-      
+      const messageId = event?.message?.id;
+      if (messageId) {
+        await Message.deleteOne({ messageId });
+        console.log("🗑 Deleted message:", messageId);
+      }
     }
+
     if (event.type === "message.updated") {
-      const { message } = event;
-      await Message.updateOne(
-        { messageId: message.id },
-        { text: message.text }
-      );
-      console.log("✏️ Updated message:", message.id);
+      const messageId = event?.message?.id;
+      if (messageId) {
+        await Message.updateOne(
+          { messageId },
+          { text: event.message.text || "" }
+        );
+        console.log("✏️ Updated message:", messageId);
+      }
     }
-     if (event.type === "channel.created") {
-      const { channel, members } = event;
-      const newChannel = new Channel({
-        channelId: channel.id,
-        name: channel.name,
-        type: channel.type,
-        members: members.map(m => m.user_id),
-        createdAt: new Date(channel.created_at),
-      });
-      await newChannel.save();
-      console.log("✅ Saved new channel:", channel.id);
+
+    // ---------------- Channels ----------------
+    if (event.type === "channel.created") {
+      const channelData = event?.channel;
+      if (channelData?.id) {
+        const members = (event?.members || []).map(m => m?.user_id).filter(Boolean);
+        const newChannel = new Channel({
+          channelId: channelData.id,
+          name: channelData.name || "",
+          type: channelData.type || "",
+          members,
+          createdAt: new Date(channelData.created_at),
+        });
+        await newChannel.save();
+        //console.log("✅ Saved new channel:", channelData.id);
+      }
     }
 
     if (event.type === "channel.deleted") {
-      const { channel } = event;
-      await Channel.deleteOne({ channelId: channel.id });
-      console.log("🗑 Deleted channel:", channel.id);
+      const channelId = event?.channel?.id;
+      if (channelId) {
+        await Channel.deleteOne({ channelId });
+        console.log("🗑 Deleted channel:", channelId);
+      }
     }
 
-    // Member events
+    // ---------------- Members ----------------
     if (event.type === "member.added") {
-      const { channel, member } = event;
-      await Channel.updateOne(
-        { channelId: channel.id },
-        { $addToSet: { members: member.user.id } }
-      );
-      console.log("➕ Added member:", member.user.id, "to channel:", channel.id);
+      const channelId = event?.channel?.id;
+      const userId = event?.member?.user?.id;
+      if (channelId && userId) {
+        await Channel.updateOne(
+          { channelId },
+          { $addToSet: { members: userId } }
+        );
+        console.log(`➕ Added member: ${userId} to channel: ${channelId}`);
+      }
     }
 
     if (event.type === "member.removed") {
-      const { channel, member } = event;
-      await Channel.updateOne(
-        { channelId: channel.id },
-        { $pull: { members: member.user.id } }
-      );
-      console.log("➖ Removed member:", member.user.id, "from channel:", channel.id);
+      const channelId = event.channel_id || event.cid;
+      const userId = event.member?.user?.id;
+
+      if (!channelId || !userId) {
+        console.log("⚠️ Missing channelId or userId in payload");
+      } else {
+        const result = await Channel.updateOne(
+          { channelId },
+          { $pull: { members: userId } } // members trong DB là String array
+        );
+        console.log("➖ Removed member:", userId, "from channel:", channelId, result);
+      }
     }
+
+
     res.status(200).send("ok");
   } catch (err) {
     console.error("❌ Webhook error:", err);

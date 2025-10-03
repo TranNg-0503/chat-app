@@ -85,21 +85,40 @@ function EditGroupChatModal({ open, onClose, channel }) {
 
   const handleSubmit = async () => {
     try {
-      if (pendingAdd.size > 0) {
-        await channel.addMembers(Array.from(pendingAdd));
+      const newMembers = Array.from(pendingAdd);
+      const removedMembers = Array.from(pendingRemove);
+
+      // Nếu channel là distinct, không thể add member, phải tạo kênh mới
+      if (channel?.data?.distinct) {
+        // tạo kênh mới với member mới
+        const updatedMembers = members.map((m) => m._id); // tất cả member hiện tại
+        const newChannel = await channel.client.channel('messaging', {
+          members: updatedMembers,
+          distinct: true, // tuỳ bạn muốn tạo kênh distinct hay không
+        });
+        await newChannel.create();
+        console.log('✅ Tạo kênh mới thành công cho member mới');
+      } else {
+        // channel bình thường, có thể thêm/xoá member
+        if (newMembers.length > 0) {
+          await channel.addMembers(newMembers);
+        }
+        if (removedMembers.length > 0) {
+          await channel.removeMembers(removedMembers);
+        }
       }
-      if (pendingRemove.size > 0) {
-        await channel.removeMembers(Array.from(pendingRemove));
-      }
-      const finalCount = members.length;
-      if (finalCount <= 1) {
+
+      // Nếu chỉ còn 1 member, xoá channel
+      if (members.length <= 2) {
         await channel.delete();
       }
+
       handleClose();
     } catch (err) {
       console.error("Error applying member changes", err);
     }
   };
+
 
   if (!open) return null;
 
@@ -131,42 +150,7 @@ function EditGroupChatModal({ open, onClose, channel }) {
         </div>
 
         {/* Search to add new */}
-        <div className="mb-2">
-          <input
-            type="text"
-            placeholder="Tìm người dùng để thêm vào nhóm"
-            className="input input-bordered w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <ul className="menu bg-base-200 max-h-56 overflow-auto rounded-box">
-          {searchResults.length > 0 ? (
-            searchResults.map((user) => (
-              <li key={user._id}>
-                <button
-                  onClick={() => handleAddUser(user)}
-                  className="flex items-center gap-2"
-                  disabled={!!members.find((m) => m._id === user._id)}
-                >
-                  <img
-                    src={user.profilePic}
-                    className="w-8 h-8 rounded-full"
-                    alt={user.fullName}
-                  />
-                  <span>{user.fullName}</span>
-                  <span className="text-xs text-gray-500">{user.email}</span>
-                </button>
-              </li>
-            ))
-          ) : (
-            <li className="text-center text-sm text-gray-500 py-2">
-              {search.trim()
-                ? "Không tìm thấy người dùng"
-                : "Nhập từ khoá để tìm"}
-            </li>
-          )}
-        </ul>
+
 
         <div className="modal-action mt-4">
           <button className="btn" onClick={handleClose}>
