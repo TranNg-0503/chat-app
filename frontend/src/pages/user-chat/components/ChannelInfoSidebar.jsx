@@ -29,17 +29,25 @@ export default function ChannelInfoSidebar() {
     return Object.values(channel?.state?.members || {}).map((m) => m.user);
   }, [channel?.cid]);
 
-  const [imagesQuick, filesQuick] = useMemo(() => {
-    const imgs = [], files = [];
+  const [mediaQuick, filesQuick] = useMemo(() => {
+    const media = [], files = [];
     (messages || []).forEach((msg) => {
       (msg.attachments || []).forEach((att, i) => {
         if (att.type === "image") {
-          imgs.push({
+          media.push({
             id: `${msg.id}-${i}`,
+            type: "image",
             url: att.thumb_url || att.image_url || att.asset_url,
           });
-        }
-        if (att.type === "file") {
+        } else if (att.type === "video") {
+          media.push({
+            id: `${msg.id}-${i}`,
+            type: "video",
+            url: att.asset_url || att.video_url,
+            thumb: att.thumb_url,
+            title: att.title,
+          });
+        } else if (att.type === "file") {
           files.push({
             id: `${msg.id}-${i}`,
             url: att.asset_url || att.image_url,
@@ -48,8 +56,9 @@ export default function ChannelInfoSidebar() {
         }
       });
     });
-    return [imgs, files];
+    return [media, files];
   }, [messages]);
+
 
   const [loadingAll, setLoadingAll] = useState(false);
 
@@ -88,29 +97,39 @@ export default function ChannelInfoSidebar() {
       </div>
 
      
-      {/* Images */}
+      {/* Images & Videos */}
       <div className="p-4 border-b">
         <div className="font-medium mb-2">Ảnh/Video</div>
         <div className="grid grid-cols-3 gap-2 max-h-48 overflow-y-auto pr-1">
-          {imagesQuick.map((m) => (
-            <a
-              key={m.id}
-              href={m.url}
-              target="_blank"
-              rel="noreferrer"
-              className="block"
-            >
-              <img
+          {mediaQuick.map((m) =>
+            m.type === "image" ? (
+              <a
+                key={m.id}
+                href={m.url}
+                target="_blank"
+                rel="noreferrer"
+                className="block"
+              >
+                <img
+                  src={m.url}
+                  className="w-20 h-20 object-cover rounded-md border border-blue-300 hover:opacity-80 transition"
+                />
+              </a>
+            ) : (
+              <video
+                key={m.id}
                 src={m.url}
-                className="w-20 h-20 object-cover rounded-md border border-blue-300 hover:opacity-80 transition"
+                controls
+                className="w-20 h-20 object-cover rounded-md border border-blue-300"
               />
-            </a>
-          ))}
-          {imagesQuick.length === 0 && (
-            <div className="text-xs text-gray-500 col-span-3">Chưa có ảnh</div>
+            )
+          )}
+          {mediaQuick.length === 0 && (
+            <div className="text-xs text-gray-500 col-span-3">Chưa có ảnh hoặc video</div>
           )}
         </div>
       </div>
+
 
       {/* Files */}
       <div className="p-4">
