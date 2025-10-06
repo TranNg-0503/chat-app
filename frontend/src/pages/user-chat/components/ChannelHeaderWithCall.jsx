@@ -46,30 +46,32 @@ function ChannelHeaderWithCall() {
     }
   };
 
-const handleStartCall = async () => {
-  if (!channel?.id) return;
+  const handleStartCall = async () => {
+    if (!channel?.id) return;
 
-  try {
-    // 1. Gửi tin nhắn call invite
-    await channel.sendMessage({
-      text: "📞 Bạn có cuộc gọi đến!",
-      attachments: [
-        {
-          type: "call_invite",
-          callId: channel.id,
-          callerId: String(user?._id),
-        },
-      ],
-    });
+    try {
+      // 1. Gửi tin nhắn call invite
+      await channel.sendMessage({
+        text: "📞 Bạn có cuộc gọi đến!",
+        attachments: [
+          {
+            type: "call_invite",
+            callId: channel.id,
+            callerId: String(user?._id),
+          },
+        ],
+      });
 
-    // 2. Mở tab mới cho người gọi
-    window.open(`/call/${channel.id}`, "_blank", "width=1200,height=800,noopener,noreferrer");
-  } catch (err) {
-    console.error("Error starting call:", err);
-  }
-};
-
-
+      // 2. Mở tab mới cho người gọi
+      window.open(
+        `/call/${channel.id}`,
+        "_blank",
+        "width=1200,height=800,noopener,noreferrer"
+      );
+    } catch (err) {
+      console.error("Error starting call:", err);
+    }
+  };
 
   return (
     <div className="relative">
@@ -93,7 +95,7 @@ const handleStartCall = async () => {
             </button>
           </>
         )}
-        {!isGroup && (
+        {isGroup && (
           <button
             className="btn btn-warning btn-sm"
             title="Rời khỏi kênh"
