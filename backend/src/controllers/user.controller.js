@@ -30,7 +30,7 @@ export async function getMyFriends(req, res) {
       .select("friends")
       .populate(
         "friends",
-        "fullName profilePic nativeLanguage learningLanguage"
+        "fullName profilePic email"
       );
 
     res.status(200).json(user.friends);
